@@ -21,8 +21,8 @@ InitialField = zeros(length(ZAxis),1);
 ZBEG = 0;
 ZEND = 0.5;
 IND1 = (ZAxis > ZBEG & ZAxis < ZEND);
-InitialField(IND1,1) = 0.001*sin(pi * (ZAxis(IND1) - ZBEG) / (ZEND - ZBEG)).^2;
-% InitialField(IND1,1) = sin(pi * (ZAxis(IND1) - ZBEG) / (ZEND - ZBEG)).^2;
+% InitialField(IND1,1) = 0.001*sin(pi * (ZAxis(IND1) - ZBEG) / (ZEND - ZBEG)).^2;
+InitialField(IND1,1) = sin(pi * (ZAxis(IND1) - ZBEG) / (ZEND - ZBEG)).^2;
 
 infield=[real(InitialField) imag(InitialField)];
 save('init_field.in','infield','-ascii')

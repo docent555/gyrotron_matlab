@@ -102,9 +102,6 @@ field = complex(zeros(length(Field),1));
 field_p = complex(zeros(length(Field),1));
 rfield_p = complex(zeros(length(Field),1));
 lfield_p = complex(zeros(length(Field),1));
-NewfieldRaw = complex(zeros(length(Field),1));
-rNewfieldRaw = complex(zeros(length(Field),1));
-lNewfieldRaw = complex(zeros(length(Field),1));
 IROldPart = complex(zeros(1,1));
 OldOldJ = complex(zeros(length(Field),1));
 Jp = zeros(length(ZAxis),1);
@@ -192,11 +189,12 @@ for step=1:steps
         + WNz * field(end) + WR(IDX(step-1))) * exp(CR * DeltaT));
     
     % nesamosoglasovannoe pole
-    field_p = M \ D;
-    %     rfield_p = rtridag(C,A,B,D);
-    %     lfield_p = ltridag(C,A,B,D);
-    %     field_p = (rfield_p + lfield_p)/2;
+    %     field_p = M \ D;
+    rfield_p = rtridag(C,A,B,D);
+    lfield_p = ltridag(C,A,B,D);
+    field_p = (rfield_p + lfield_p)/2;        
     
+    maxfield = max(abs(field(:,1)));    
     while 1        
 %         Jp = zeros(length(ZAxis),1);
         theta(:,:) = pendulumODE(field_p(:,1), ZAxis(:,1), th0(1,:), Delta);
@@ -214,23 +212,25 @@ for step=1:steps
                
         
         % samosoglasovannoe pole
-        field_p(:,1) = M \ D;
-        %     rfield_p(:,1) = rtridag(C,A,B,D);
-        %     lfield_p(:,1) = rtridag(C,A,B,D);
-        %     field_p = (rNewfieldRaw + lNewfieldRaw)/2;
+        %field_p(:,1) = M \ D;
+        rfield_p(:,1) = rtridag(C,A,B,D);
+        lfield_p(:,1) = rtridag(C,A,B,D);
+        field_p = (rfield_p + lfield_p)/2;
         
         
-        fmax(IDX(step)) = max(abs(field(:,1)));
-        
-        if ((fmax(IDX(step)) - fmax(IDX(step-1)))/fmax(IDX(step))) < tol
+        maxfield_p = max(abs(field_p(:,1)));
+        maxdiff = abs(maxfield - maxfield_p)/maxfield;
+        if maxdiff < tol
             break
         end
+        maxfield = maxfield_p;
     end
     
     field(:,1) = field_p(:,1);
 %     J = zeros(length(ZAxis),1);
     theta(:,:) = pendulumODE(field(:,1), ZAxis(:,1), th0(1,:), Delta);
     J(:,1) = I * 2 / Ne * sum(exp(-1i*theta), 2);
+    fmax(IDX(step)) = max(abs(field(:,1)));
     
     k = step + 1;
     
