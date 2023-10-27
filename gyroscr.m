@@ -131,7 +131,7 @@ JNzm1(IDX(0)) = J(end-1);
 SigmaNz(IDX(0)) = 0;
 SigmaNzm1(IDX(0)) = 0;
 
-WR(IDX(0)) = DeltaZ * (0.166666666666667*(2 * JNz(IDX(0)) + 2 * JNzm1(IDX(0))));
+WR(IDX(0)) = DeltaZ * (0.166666666666667*(2 * JNz(IDX(0)) + JNzm1(IDX(0))));
 
 SHOW = 1;
 if SHOW == 1
