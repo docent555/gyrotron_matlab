@@ -1,80 +1,96 @@
-function gyrotron(NNe, LLz, TTend, DDelta, II, ddz, ddt, tol) %#codegen
+function gyrotron(NNe, LLz, TTend, DDelta, Icc, ddz, ddt, tol) %#codegen
 
 if nargin < 7
     fprintf('USAGE: orotron Ne Lz Tend Delta I dz dt\n')
 end
 
+% Ne = str2double(NNe);
+% Lz = str2double(LLz);
+% Tend = str2double(TTend);
+% Delta = str2double(DDelta);
+% Ic = str2double(Icc);
+% dz = str2double(ddz);
+% dt = str2double(ddt);
+
 Ne = NNe;
 Lz = LLz;
 Tend = TTend;
 Delta = DDelta;
-I = II;
+Ic = Icc;
 dz = ddz;
 dt = ddt;
-DeltaZ = dz;
-DeltaT = dt;
 
-ZAxis = (0:DeltaZ:Lz)';
-TAxis = (0:DeltaT:Tend)';
+Nz = Lz/dz + 1;
+Nt = Tend/dt + 1;
 
-InitialField = zeros(length(ZAxis),1);
+ZAxis = zeros(Nz, 1);
+TAxis = zeros(Nt, 1);
+InitialField = zeros(Nz,1);
+
+for i=1:Nz
+    ZAxis(i) = (i-1) * dz;
+end
+
+for i=1:Nt
+    TAxis(i) = (i-1) * dt;
+end
+
 ZBEG = 0;
 ZEND = 0.5;
 IND1 = (ZAxis > ZBEG & ZAxis < ZEND);
-% InitialField(IND1,1) = 0.001*sin(pi * (ZAxis(IND1) - ZBEG) / (ZEND - ZBEG)).^2;
-InitialField(IND1,1) = sin(pi * (ZAxis(IND1) - ZBEG) / (ZEND - ZBEG)).^2;
+InitialField(IND1,1) = 0.001*sin(pi * (ZAxis(IND1) - ZBEG) / (ZEND - ZBEG)).^2;
+% InitialField(IND1,1) = sin(pi * (ZAxis(IND1) - ZBEG) / (ZEND - ZBEG)).^2;
 % InitialField = 10*ones(length(ZAxis),1) + 10*1i*ones(length(ZAxis),1);
 
 infield=[real(InitialField) imag(InitialField)];
 save('init_field.in','infield','-ascii')
 
-INTERVALT = fix(size(TAxis,1)/500);
-INTERVALZ = fix(size(ZAxis,1)/500);
-% INTERVALT = 1;
-% INTERVALZ = 1;
-if INTERVALT < 1
+INTT = fix(Nt/500);
+INTZ = fix(Nz/500);
+% INTT = 1;
+% INTZ = 1;
+if INTT < 1
     error('Too small Tend');    
 end
 
-if INTERVALZ < 1
+if INTZ < 1
     error('Too small Zend');    
 end
 
-IN.Ne = Ne;
-IN.ZAxis = ZAxis;
-IN.TAxis = TAxis;
-IN.Delta = Delta;
-IN.I = I;
-IN.INTERVALT = INTERVALT;
-IN.INTERVALZ = INTERVALZ;
-IN.InitialField = InitialField;
-IN.tol = tol;
-
-OUT = gyroscr(IN);
-
-RES.Ne = IN.Ne;
-RES.Tend = Tend;
-RES.Lz = Lz;
-RES.Delta = IN.Delta;
-RES.I = IN.I;
-RES.dz = dz;
-RES.dt = dt;
-RES.INTERVALT = IN.INTERVALT;
-RES.INTERVALZ = IN.INTERVALZ;
-RES.ZAxis = OUT.ZAxis;
-RES.TAxis = OUT.TAxis;
-RES.OUTB = OUT.OUTB;
-RES.OUTJ = OUT.OUTJ;
-% OUTFieldRe = real(OUT.OUTB);
-% OUTFieldIm = imag(OUT.OUTB);
-% OUTJRe = real(OUT.OUTJ);
-% OUTJIm = imag(OUT.OUTJ);
-
-% plot(RES.ZAxis(:,1), abs(RES.OUTB(:,end)))
-
-if (isempty(RES.TAxis) || isempty(RES.OUTB))
-    msgbox('First press the button "Solve"!')
+if INTT > 1 && INTZ > 1
+    OUTNt = fix((Nt-1)/INTT) + 1;
+    OUTNz = fix((Nz-1)/INTZ) + 1;
+elseif INTT == 1 && INTZ > 1
+    OUTNt = Nt;
+    OUTNz = fix((Nz-1)/INTZ) + 1;
+elseif INTT > 1 && INTZ == 1
+    OUTNt = fix((Nt-1)/INTT) + 1;
+    OUTNz = Nz;
 else
+    OUTNt = Nt;
+    OUTNz = Nz;
+end    
+
+OUTJ = zeros(OUTNz,OUTNt);
+OUTF = zeros(OUTNz,OUTNt);
+OUTZAxis = zeros(OUTNz,1);
+OUTTAxis = zeros(OUTNt,1);
+
+for i = 1:OUTNz
+    OUTZAxis(i) = (i-1)*INTZ*dz;
+end
+
+for i = 1:OUTNt
+    OUTTAxis(i) = (i-1)*INTT*dt;
+end
+
+[OUTF, OUTJ] = gyroscr(Nz, Nt, Ne, ZAxis, TAxis, Delta, Ic, dt, dz, tol, INTT, INTZ, OUTNz, OUTNt, InitialField);
+
+% plot(RES.ZAxis(:,1), abs(RES.OUTF(:,end)))
+
+% if (isempty(TAxis) || isempty(OUTF))
+%     msgbox('First press the button "Solve"!')
+% else
     Folder = 'results/';
     
     hash = datestr(now,30);
@@ -86,27 +102,27 @@ else
 %     save(fileResults,"RES","-v7.3");
     
     % Âûגמה ג .dat פאיכ    
-    OUTBvsZ = zeros(size(OUT.OUTB,1), 2*size(OUT.OUTB,2));
-    OUTJvsZ = zeros(size(OUT.OUTJ,1), 2*size(OUT.OUTJ,2));
-    OUTBvsZ(:,1:2:end-1) = real(OUT.OUTB);
-    OUTBvsZ(:,2:2:end) = imag(OUT.OUTB);
-    OUTJvsZ(:,1:2:end-1) = real(OUT.OUTJ);
-    OUTJvsZ(:,2:2:end) = imag(OUT.OUTJ);
+    OUTBvsZ = zeros(size(OUTF,1), 2*size(OUTF,2));
+    OUTJvsZ = zeros(size(OUTJ,1), 2*size(OUTJ,2));
+    OUTBvsZ(:,1:2:end-1) = real(OUTF);
+    OUTBvsZ(:,2:2:end) = imag(OUTF);
+    OUTJvsZ(:,1:2:end-1) = real(OUTJ);
+    OUTJvsZ(:,2:2:end) = imag(OUTJ);
     
-    OUT.OUTB = OUT.OUTB.';
-    OUT.OUTJ = OUT.OUTJ.';
-    OUTBvsT = zeros(size(OUT.OUTB,1), 2*size(OUT.OUTB,2));
-    OUTJvsT = zeros(size(OUT.OUTJ,1), 2*size(OUT.OUTJ,2));
-    OUTBvsT(:,1:2:end-1) = real(OUT.OUTB);
-    OUTBvsT(:,2:2:end) = imag(OUT.OUTB);
-    OUTJvsT(:,1:2:end-1) = real(OUT.OUTJ);
-    OUTJvsT(:,2:2:end) = imag(OUT.OUTJ);      
+    OUTF = OUTF.';
+    OUTJ = OUTJ.';
+    OUTBvsT = zeros(size(OUTF,1), 2*size(OUTF,2));
+    OUTJvsT = zeros(size(OUTJ,1), 2*size(OUTJ,2));
+    OUTBvsT(:,1:2:end-1) = real(OUTF);
+    OUTBvsT(:,2:2:end) = imag(OUTF);
+    OUTJvsT(:,1:2:end-1) = real(OUTJ);
+    OUTJvsT(:,2:2:end) = imag(OUTJ);      
     
-    OUTBvsZ = [OUT.ZAxis OUTBvsZ];
-    OUTJvsZ = [OUT.ZAxis OUTJvsZ];
+    OUTBvsZ = [OUTZAxis OUTBvsZ];
+    OUTJvsZ = [OUTZAxis OUTJvsZ];
     
-    OUTBvsT = [OUT.TAxis OUTBvsT];
-    OUTJvsT = [OUT.TAxis OUTJvsT];
+    OUTBvsT = [OUTTAxis OUTBvsT];
+    OUTJvsT = [OUTTAxis OUTJvsT];
     
     fileParameters = sprintf('%s/%s', FolderName, 'parameters.txt');    
     fileResultsBvsZ = sprintf('%s/%s', FolderName, 'resultsBvsZ.dat');
@@ -118,7 +134,7 @@ else
     
     strParam = 'Ne = %d\nTend = %f\nLz = %f\nDelta = %f\nI = %f\ndz = %f\ndt = %f\n';
     fileID = fopen(fileParameters ,'wt');
-    fprintf(fileID, strParam, RES.Ne, RES.Tend, RES.Lz, RES.Delta, RES.I, RES.dz, RES.dt);
+    fprintf(fileID, strParam, Ne, Tend, Lz, Delta, Ic, dz, dt);
     fclose(fileID);    
     save(fileResultsBvsZ, 'OUTBvsZ', '-ascii');
     save(fileResultsJvsZ, 'OUTJvsZ', '-ascii');
@@ -126,7 +142,7 @@ else
     save(fileResultsJvsT, 'OUTJvsT', '-ascii');
     save(fileT, 'TAxis', '-ascii');
     save(fileZ, 'ZAxis', '-ascii');
-end
+% end
 
 return
 

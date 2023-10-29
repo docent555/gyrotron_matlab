@@ -8,7 +8,7 @@ lHandleFr = line(axFr, nan, nan); %# Generate a blank line and return the line h
 lHandleFr.Color = 'black';
 lHandleFr.LineWidth = 1;
 axFr.FontSize = 12;
-axFr.XLabel.String = 'z';
+axFr.XLabel.String = 't';
 axFr.YLabel.String = '|F|_{max}';
 
 axFa = subplot(2,1,2);
