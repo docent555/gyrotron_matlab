@@ -20,8 +20,8 @@ Ic = Icc;
 dz = ddz;
 dt = ddt;
 
-Nz = Lz/dz + 1;
-Nt = Tend/dt + 1;
+Nz = fix(Lz/dz) + 1;
+Nt = fix(Tend/dt) + 1;
 
 ZAxis = zeros(Nz, 1);
 TAxis = zeros(Nt, 1);
@@ -40,7 +40,7 @@ ZEND = 0.5;
 IND1 = (ZAxis > ZBEG & ZAxis < ZEND);
 InitialField(IND1,1) = 0.001*sin(pi * (ZAxis(IND1) - ZBEG) / (ZEND - ZBEG)).^2;
 % InitialField(IND1,1) = sin(pi * (ZAxis(IND1) - ZBEG) / (ZEND - ZBEG)).^2;
-% InitialField = 10*ones(length(ZAxis),1) + 10*1i*ones(length(ZAxis),1);
+% InitialField = ones(length(ZAxis),1) + 1i*ones(length(ZAxis),1);
 
 infield=[real(InitialField) imag(InitialField)];
 save('init_field.in','infield','-ascii')

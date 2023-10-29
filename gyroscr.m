@@ -21,6 +21,13 @@ cu_p = zeros(length(ZAxis),1);
 cu = zeros(length(ZAxis),1);
 OUTB = zeros(OUTNz, OUTNt);
 OUTJ = zeros(OUTNz, OUTNt);
+% theta = zeros(length(ZAxis), Ne);
+p = zeros(Nz, Ne);
+pv = zeros(Nz, 2*Ne);
+p0 = zeros(Ne,1);
+p0v = zeros(2*Ne,1);
+reidx = zeros(Ne,1);
+imidx = zeros(Ne,1);
 
 if INTZ > 1
     IZ = 0:INTZ:length(ZAxis);
@@ -32,7 +39,7 @@ end
 
 Field(:,1) = InitialField;
 kpar2 = zeros(length(ZAxis),1);
-% N = length(ZAxis);
+N = length(ZAxis);
 A = complex(zeros(Nz,1));
 B = complex(zeros(Nz-1,1));
 C = complex(zeros(Nz-1,1));
@@ -44,17 +51,21 @@ SQR2D2 = 0.707106781186548;
 SQRDT = sqrt(dt);
 SQRDZ = dz*dz;
 
-C0 = -1i;
+C0 = 1.0D0;
+% C0 = -1i;
 % C0 = 1i;
 CR = 0;
-C2 = 1/sqrt(1i*pi);
+C2 = 1.0D0/sqrt(1i*pi);
 % C2 = 1/sqrt(-1i*pi);
-WNz = -((2.0D0/3.0D0*C0*dz/dt + kpar2(end)*dz/3.0D0) - 1.0D0/dz);
-WNzm1 = -((C0/3.0D0*dz/dt + kpar2(end-1)*dz/6.0D0) + 1.0D0/dz);
+% WNz = -((2.0D0/3.0D0*C0*dz/dt + kpar2(end)*dz/3.0D0) - 1.0D0/dz);
+% WNzm1 = -((C0/3.0D0*dz/dt + kpar2(end-1)*dz/6.0D0) + 1.0D0/dz);
+WNz = -((-1i*2.0D0/3.0D0*C0*dz/dt + kpar2(end)*dz/3.0D0) - 1.0D0/dz);
+WNzm1 = -((-1i*C0/3.0D0*dz/dt + kpar2(end-1)*dz/6.0D0) + 1.0D0/dz);
 
 
 A(1) = 1.0D0;
-A(2:end-1) = -2.0D0*(1.0D0 - dz/dt*C0*dz - dz*kpar2(2:end-1)*dz/2.0D0);
+% A(2:end-1) = -2.0D0*(1.0D0 - dz/dt*C0*dz - dz*kpar2(2:end-1)*dz/2.0D0);
+A(2:end-1) = -2.0D0*(1.0D0 + 1i * dz/dt*C0*dz - dz*kpar2(2:end-1)*dz/2.0D0);
 A(end) = 1.0D0 + 4.0D0/3.0D0*C2*WNz*SQRDT;
 B(1) = 0;
 B(2:end) = 1.0D0;
@@ -66,12 +77,18 @@ C(end) = 4.0D0/3.0D0*C2*WNzm1*SQRDT;
 jout = 1;
 OUTB(:, jout) = Field(IZ,1);
 th0 = 2.0D0*pi*(0:Ne-1)/Ne;
-theta = zeros(length(ZAxis), Ne);
+p0 = (2.0D0*pi*(0:Ne-1)/Ne)';
+p0v = [real(p0); imag(p0)];
+reidx = 1:Ne;
+imidx = Ne+1:2*Ne;
 
 % Initial values
 field(:,1) = Field(:,1);
-theta(:,:) = pendulumODE(field(:,1), ZAxis(:,1), th0(1,:), Delta);
-cu(:,1) = Ic * 2.0D0 / Ne * sum(exp(-1i*theta), 2);
+% theta(:,:) = pendulumODE(field(:,1), ZAxis(:,1), th0(1,:), Delta);
+S1 = griddedInterpolant(ZAxis,field,'spline');
+[~, pv] = ode45(@(z, p) rhsv(z, p, Delta, S1, reidx, imidx) , ZAxis , p0v);
+p = pv(:,reidx) + 1i*pv(:,imidx);
+cu(:,1) = Ic * trapz(th0, p, 2)  / (2*pi);
 OUTJ(:,jout) = cu(IZ,1);
 
 IDX = @(j) (j + 1);
@@ -102,23 +119,15 @@ for step=1:steps
         lhr.XData(1:step) = TAxis(1:step);
         lha.YData = abs(field);
         drawnow
-    end        
-    
-%     C2mSQRDTm4d3 = C2 * SQRDT * 4.0D0 / 3.0D0;
-%     SQRDZd2 = SQRDZ / 2.0D0;
-%     C0mSQRDZdDeltaT = C0 * SQRDZ / dt;
-%     SQRDTm4d3 = 4.0D0 / 3.0D0 * SQRDT;
-%     SQRDTm2d3 = 2.0D0 / 3.0D0 * SQRDT;
-%     DeltaZmC0m2d3dDeltaT = dz / dt * C0 * 2.0D0 / 3.0D0;
-%     DeltaZmC0d3dDeltaT = dz / dt * C0 / 3.0D0;
-%     DeltaZd2 = dz / 2.0D0;
-%     DeltaZd3 = dz / 3.0D0;
-%     DeltaZd6 = dz / 6.0D0;
+    end           
  
-    WR(IDX(step)) = dz * ((C0 * 2.0D0/3.0D0/dt - kpar2(end)/3.0D0) * FNz(IDX(step-1))...
-        + (C0/3.0D0/dt - kpar2(end - 1)/6.0D0) * FNzm1(IDX(step-1))...
-        + 1.0D0/6.0D0*(4.0D0 * JNz(IDX(step-1)) + 2.0D0 * JNzm1(IDX(step-1))) - (2.0D0 * SigmaNz(IDX(step-1)) + SigmaNzm1(IDX(step-1))));
-
+%     WR(IDX(step)) = dz * ((C0 * 2.0D0/3.0D0/dt - kpar2(end)/3.0D0) * FNz(IDX(step-1))...
+%         + (C0/3.0D0/dt - kpar2(end - 1)/6.0D0) * FNzm1(IDX(step-1))...
+%         + 1.0D0/6.0D0*(4.0D0 * JNz(IDX(step-1)) + 2.0D0 * JNzm1(IDX(step-1))) - (2.0D0 * SigmaNz(IDX(step-1)) + SigmaNzm1(IDX(step-1)))); 
+    WR(IDX(step)) = dz * ((-1i*C0 * 2.0D0/3.0D0/dt - kpar2(end)/3.0D0) * FNz(IDX(step-1))...
+        + (-1i*C0/3.0D0/dt - kpar2(end - 1)/6.0D0) * FNzm1(IDX(step-1))...
+        + 1.0D0/6.0D0*(4.0D0 * JNz(IDX(step-1)) + 2.0D0 * JNzm1(IDX(step-1))) - (2.0D0 * SigmaNz(IDX(step-1)) + SigmaNzm1(IDX(step-1)))); 
+    
     u = @(j) (WNzm1 * FNzm1(IDX(j)) + WNz * FNz(IDX(j)) + WR(IDX(j))).' .* exp(CR * dt * (step - j));
     
     if step == 1
@@ -138,37 +147,42 @@ for step=1:steps
     
     D(1) = 0;
     %         D(1) = IN.TimeAmp * exp(1i * IN.TimeFreq * AxisTau(step));
-    D(2:end - 1) = SQRDZ*(2.0D0*cu(2:end-1)) ...
-        + 2.0D0 * (1.0D0 + C0 * SQRDZ/dt - SQRDZ * kpar2(2:end-1)/2.0D0) .* field(2:end - 1)...
-        - (field(1:end - 2) + field(3:end));
-    D(end) = -C2 *(IR + 4.0D0/3.0D0 * WR(IDX(step)) * SQRDT + 2.0D0/3.0D0 * SQRDT * (WNzm1 * field(end - 1)...
+    
+    D(2:end - 1) = -1i*SQRDZ * (2.0D0*cu(2:end-1)) ...
+        + 2.0D0 * (1.0D0 -1i* C0 * SQRDZ/dt - SQRDZ * kpar2(2:end-1) / 2.0D0) .* field(2:end - 1)...
+        - (field(1:end - 2) + field(3:end));      
+    D(end) = -C2 * (IR + 4.0D0/3.0D0 * WR(IDX(step)) * SQRDT + 2.0D0 / 3.0D0 * SQRDT * (WNzm1 * field(end - 1)...
         + WNz * field(end) + WR(IDX(step-1))) * exp(CR * dt));
     
     % nesamosoglasovannoe pole
-    %     field_p = M \ D;
+%     field_p = M \ D;
     rfield_p = rtridag(C,A,B,D);
     lfield_p = ltridag(C,A,B,D);
     field_p = (rfield_p + lfield_p)/2.0D0;        
     
     maxfield = max(abs(field(:,1)));    
     while 1        
-%         cu_p = zeros(length(ZAxis),1);
-        theta(:,:) = pendulumODE(field_p(:,1), ZAxis(:,1), th0(1,:), Delta);
-        cu_p(:,1) = Ic * 2.0D0 / Ne * sum(exp(-1i*theta), 2);               
+        S1 = griddedInterpolant(ZAxis,field,'spline');
+        [~, pv] = ode45(@(z, p) rhsv(z, p, Delta, S1, reidx, imidx) , ZAxis , p0v);
+        p = pv(:,reidx) + 1i*pv(:,imidx);
+        cu_p(:,1) = Ic * trapz(th0, p, 2)  / (2.0D0*pi);
+
+%         theta(:,:) = pendulumODE(field_p(:,1), ZAxis(:,1), th0(1,:), Delta);
+%         cu_p(:,1) = Ic * 2.0D0 / Ne * sum(exp(-1i*theta), 2);               
         
-        WR(IDX(step)) = dz * ((C0 * 2.0D0/3.0D0 / dt - kpar2(end) / 3.0D0) * field(end)...
-            + (C0 / 3.0D0 / dt - kpar2(end - 1) / 6.0D0)*field(end - 1)...
-            + 1.0D0/6.0D0 * (2.0D0 * cu_p(end) + 2.0D0 * cu(end) + cu_p(end - 1) + cu(end - 1)) - (2.0D0 * SigmaNz(IDX(step-1)) + SigmaNzm1(IDX(step-1))));        
-        
-        D(2:end - 1) = SQRDZ * (cu_p(2:end - 1) + cu(2:end - 1)) ...
-            + 2.0D0 * (1 + C0 * SQRDZ / dt - SQRDZ * kpar2(2:end - 1) / 2.0D0).*field(2:end - 1)...
+        WR(IDX(step)) = dz * ((-1i*C0 * 2.0D0/3.0D0 / dt - kpar2(end) / 3.0D0) * field(end)...
+            + (-1i*C0 / 3.0D0 / dt - kpar2(end - 1) / 6.0D0)*field(end - 1)...
+            + 1.0D0/6.0D0 * (2.0D0 * cu_p(end) + 2.0D0 * cu(end) + cu_p(end - 1) + cu(end - 1)) - (2.0D0 * SigmaNz(IDX(step-1)) + SigmaNzm1(IDX(step-1))));          
+
+        D(2:end - 1) = -1i*SQRDZ * (cu_p(2:end - 1) + cu(2:end - 1)) ...
+            + 2.0D0 * (1.0D0 -1i* C0 * SQRDZ / dt - SQRDZ * kpar2(2:end - 1) / 2.0D0).*field(2:end - 1)...
             - (field(1:end - 2) + field(3:end));
-        D(end) = -C2*(IR + 4.0D0/3.0D0 * WR(IDX(step)) * SQRDT + 2.0D0/3.0D0 * SQRDT * (WNzm1 * field(end - 1)...
+        D(end) = -C2 * (IR + 4.0D0/3.0D0 * WR(IDX(step)) * SQRDT + 2.0D0/3.0D0 * SQRDT * (WNzm1 * field(end - 1)...
             + WNz * field(end) + WR(IDX(step-1))) * exp(CR * dt));
                
         
         % samosoglasovannoe pole
-        %field_p(:,1) = M \ D;
+%         field_p(:,1) = M \ D;
         rfield_p(:,1) = rtridag(C,A,B,D);
         lfield_p(:,1) = rtridag(C,A,B,D);
         field_p = (rfield_p + lfield_p)/2.0D0;
@@ -183,8 +197,12 @@ for step=1:steps
     end
     
     field(:,1) = field_p(:,1);
-    theta(:,:) = pendulumODE(field(:,1), ZAxis(:,1), th0(1,:), Delta);
-    cu(:,1) = Ic * 2.0D0 / Ne * sum(exp(-1i*theta), 2);
+    S1 = griddedInterpolant(ZAxis,field,'spline');
+    [~, pv] = ode45(@(z, p) rhsv(z, p, Delta, S1, reidx, imidx) , ZAxis , p0v);
+    p = pv(:,reidx) + 1i*pv(:,imidx);
+    cu(:,1) = Ic * trapz(th0, p, 2)  / (2.0D0*pi);
+%     theta(:,:) = pendulumODE(field(:,1), ZAxis(:,1), th0(1,:), Delta);
+%     cu(:,1) = Ic * 2.0D0 / Ne * sum(exp(-1i*theta), 2);
     fmax(IDX(step)) = max(abs(field(:,1)));
     
     k = step + 1;
@@ -200,23 +218,28 @@ for step=1:steps
     JNz(IDX(step)) = cu(end);
     JNzm1(IDX(step)) = cu(end - 1); 
     
-    SigmaNz(IDX(step)) = -(kpar2(end)/6.0D0 + C0/3.0D0/dt) * FNz(IDX(step)) ...
-        + (C0/3.0D0/dt - kpar2(end)/6.0D0) * FNz(IDX(step - 1)) ...
-        + 1.0D0/6.0D0*(JNz(IDX(step)) + JNz(IDX(step - 1))) - SigmaNz(IDX(step - 1));
-    SigmaNzm1(IDX(step)) = -(kpar2(end - 1)/6.0D0 + C0/3.0D0/dt) * FNzm1(IDX(step)) ...
-        + (C0/3.0D0/dt - kpar2(end - 1)/6.0D0) * FNzm1(IDX(step - 1)) ...
-        + 1.0D0/6.0D0*(JNzm1(IDX(step)) + JNzm1(IDX(step - 1))) - SigmaNzm1(IDX(step - 1));
+%     SigmaNz(IDX(step)) = -(kpar2(end)/6.0D0 + C0/3.0D0/dt) * FNz(IDX(step)) ...
+%         + (C0/3.0D0/dt - kpar2(end)/6.0D0) * FNz(IDX(step - 1)) ...
+%         + 1.0D0/6.0D0*(JNz(IDX(step)) + JNz(IDX(step - 1))) - SigmaNz(IDX(step - 1));
+%     SigmaNzm1(IDX(step)) = -(kpar2(end - 1)/6.0D0 + C0/3.0D0/dt) * FNzm1(IDX(step)) ...
+%         + (C0/3.0D0/dt - kpar2(end - 1)/6.0D0) * FNzm1(IDX(step - 1)) ...
+%         + 1.0D0/6.0D0*(JNzm1(IDX(step)) + JNzm1(IDX(step - 1))) - SigmaNzm1(IDX(step - 1));
+    SigmaNz(IDX(step)) = -(kpar2(end)/6.0D0 -1i* C0/3.0D0/dt) * FNz(IDX(step)) ...
+        + (-1i*C0/3.0D0/dt - kpar2(end)/6.0D0) * FNz(IDX(step - 1)) ...
+        -1i /6.0D0*(JNz(IDX(step)) + JNz(IDX(step - 1))) - SigmaNz(IDX(step - 1));
+    SigmaNzm1(IDX(step)) = -(kpar2(end - 1)/6.0D0 -1i* C0/3.0D0/dt) * FNzm1(IDX(step)) ...
+        + (-1i*C0/3.0D0/dt - kpar2(end - 1)/6.0D0) * FNzm1(IDX(step - 1)) ...
+        -1i /6.0D0*(JNzm1(IDX(step)) + JNzm1(IDX(step - 1))) - SigmaNzm1(IDX(step - 1));
     
-%     fprintf(['\b\b\b\b\b\b\b\b\b\b\b\b\b\b\b\b\b\b\b\b'...
-%         '\b\b\b\b\b\b\b\b\b\b\b\b\b\b\b\b\b\b\b\b'...
-%         '\b\b\b\b\b\b\b\b\b\b\b\b\b\b\b\b\b\b\b\b'...
-%         '\b\b\b\b\b\b\b\b\b\b\b\b\b\b\b\b\b\b\b\b\b\b\b'...
-%         'Step = %8i   Time = %8.4f   Bmax = %15.10f   Jmax = %15.10f'],...
-%         step, TAxis(k), fmax(k), max(abs(cu(:,1))));
+    fprintf(['\b\b\b\b\b\b\b\b\b\b\b\b\b\b\b\b\b\b\b\b'...
+        '\b\b\b\b\b\b\b\b\b\b\b\b\b\b\b\b\b\b\b\b'...
+        '\b\b\b\b\b\b\b\b\b\b\b\b\b\b\b\b\b\b\b\b'...
+        '\b\b\b\b\b\b\b\b\b\b\b\b\b\b\b\b\b\b\b\b\b\b\b'...
+        'Step = %8i   Time = %8.4f   Bmax = %15.10f   Jmax = %15.10f'],...
+        step, TAxis(k), fmax(k), max(abs(cu(:,1))));
     
-    str = sprintf('Step = %8i   Time = %8.4f   Bmax = %15.10f   Jmax = %15.10f', step, TAxis(k), fmax(k), max(abs(cu(:,1))));
-    
-    disp(str);
+%     str = sprintf('Step = %8i   Time = %8.4f   Bmax = %15.10f   Jmax = %15.10f', step, TAxis(k), fmax(k), max(abs(cu(:,1))));    
+%     disp(str);
     
 end
 
@@ -233,6 +256,25 @@ seconds = ExecutionTime - hours*3600 - minutes*60;
 fprintf("ExecitionTime = %8.4f [h]   %8.4f [m]   %8.4f [s]\n", hours, minutes, seconds);
 
 fprintf(" \n\n");
+end
+
+function uv = rhsv(z, pv, delta, a, reidx, imidx)
+
+uv = zeros(2*size(reidx,1),1);
+
+p = pv(reidx) + 1i*pv(imidx);
+
+u = rhs(z, p, delta, a);
+
+uv(reidx) = real(u);
+uv(imidx) = imag(u);
+
+end
+
+function u = rhs(z, p, delta, a)
+
+u = -a(z) - 1i*p.*(delta - 1.0D0 + abs(p).^2);
+
 end
 
 
