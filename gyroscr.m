@@ -117,9 +117,7 @@ fprintf('\n');
 timerVal = tic;
 for step=1:steps
     
-        if SHOW == 1
-            lHandleB.YData = abs(field(:,1));
-            lHandleJ.YData = abs(cu(:,1));
+        if SHOW == 1           
             lhfmax.YData(1:step) = fmax(1:step);
             lhfmax.XData(1:step) = TAxis(1:step);
             lhfabs.YData = abs(field);
@@ -127,6 +125,7 @@ for step=1:steps
             lhjmax.YData(1:step) = jmax(1:step);
             lhjmax.XData(1:step) = TAxis(1:step);
             lhjabs.YData = abs(cu);
+            
             drawnow
         end
     
@@ -141,14 +140,14 @@ for step=1:steps
     elseif step == 2
         IR = 4.0D0/3.0D0 * SQRDT * (u(0)*(1 - SQR2D2) + u(1)*(SQR2M2 - 2.5D0));
     else
-        %         j = 1:step-2;
-        %         IR = 4.0D0/3.0D0 * SQRDT * (u(0)*((step - 1).^(1.5) - (step - 1.5)*sqrt(step))...
-        %             + sum(u(j).*((step - j - 1).^(1.5) - 2*(step - j).^(1.5) + (step - j + 1).^(1.5)))...
-        %             + u(step - 1)*(SQR2M2 - 2.5));
-        IR = 4.0D0/3.0D0 * SQRDT * (u(0)*((step - 1.0D0).^(1.5) - (step - 1.5D0)*sqrt(step)) + u(step - 1)*(SQR2M2 - 2.5D0));
-        for j = 1:step-2
-            IR = IR + 4.0D0/3.0D0 * SQRDT * (u(j).*((step - j - 1.0D0).^(1.5) - 2.0D0*(step - j).^(1.5) + (step - j + 1.0D0).^(1.5)));
-        end
+        j = 1:step-2;
+        IR = 4.0D0/3.0D0 * SQRDT * (u(0)*((step - 1).^(1.5) - (step - 1.5)*sqrt(step))...
+            + sum(u(j).*((step - j - 1).^(1.5) - 2*(step - j).^(1.5) + (step - j + 1).^(1.5)))...
+            + u(step - 1)*(SQR2M2 - 2.5));
+        %         IR = 4.0D0/3.0D0 * SQRDT * (u(0)*((step - 1.0D0).^(1.5) - (step - 1.5D0)*sqrt(step)) + u(step - 1)*(SQR2M2 - 2.5D0));
+        %         for j = 1:step-2
+        %             IR = IR + 4.0D0/3.0D0 * SQRDT * (u(j).*((step - j - 1.0D0).^(1.5) - 2.0D0*(step - j).^(1.5) + (step - j + 1.0D0).^(1.5)));
+        %         end
     end
     
     D(1) = 0;
