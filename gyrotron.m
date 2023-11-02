@@ -116,48 +116,44 @@ end
     OUTJre = real(OUTJ);
     OUTJim = imag(OUTJ);
     
-%     OUTBvsZ = zeros(size(OUTF,1), 2*size(OUTF,2));
-%     OUTJvsZ = zeros(size(OUTJ,1), 2*size(OUTJ,2));
-%     OUTBvsZ(:,1:2:end-1) = real(OUTF);
-%     OUTBvsZ(:,2:2:end) = imag(OUTF);
-%     OUTJvsZ(:,1:2:end-1) = real(OUTJ);
-%     OUTJvsZ(:,2:2:end) = imag(OUTJ);
-%     
-%     OUTF = OUTF.';
-%     OUTJ = OUTJ.';
-%     OUTBvsT = zeros(size(OUTF,1), 2*size(OUTF,2));
-%     OUTJvsT = zeros(size(OUTJ,1), 2*size(OUTJ,2));
-%     OUTBvsT(:,1:2:end-1) = real(OUTF);
-%     OUTBvsT(:,2:2:end) = imag(OUTF);
-%     OUTJvsT(:,1:2:end-1) = real(OUTJ);
-%     OUTJvsT(:,2:2:end) = imag(OUTJ);      
-%     
-%     OUTBvsZ = [OUTZAxis OUTBvsZ];
-%     OUTJvsZ = [OUTZAxis OUTJvsZ];
-%     
-%     OUTBvsT = [OUTTAxis OUTBvsT];
-%     OUTJvsT = [OUTTAxis OUTJvsT];
-%     
-%     fileParameters = sprintf('%s/%s', FolderName, 'parameters.txt');    
-%     fileResultsBvsZ = sprintf('%s/%s', FolderName, 'resultsBvsZ.dat');
-%     fileResultsJvsZ = sprintf('%s/%s', FolderName, 'resultsJvsZ.dat');
-%     fileResultsBvsT = sprintf('%s/%s', FolderName, 'resultsBvsT.dat');
-%     fileResultsJvsT = sprintf('%s/%s', FolderName, 'resultsJvsT.dat');
-%     fileT = sprintf('%s/%s', FolderName, 'Time.dat');
-%     fileZ = sprintf('%s/%s', FolderName, 'Z.dat');
-%     
-%     strParam = 'Ne = %d\nTend = %f\nLz = %f\nDelta = %f\nI = %f\ndz = %f\ndt = %f\n';
-%     fileID = fopen(fileParameters ,'wt');
-%     fprintf(fileID, strParam, Ne, Tend, Lz, Delta, Ic, dz, dt);
-%     fclose(fileID);    
-%     save(fileResultsBvsZ, 'OUTBvsZ', '-ascii');
-%     save(fileResultsJvsZ, 'OUTJvsZ', '-ascii');
-%     save(fileResultsBvsT, 'OUTBvsT', '-ascii');
-%     save(fileResultsJvsT, 'OUTJvsT', '-ascii');
-%     save(fileT, 'TAxis', '-ascii');
-%     save(fileZ, 'ZAxis', '-ascii');
-% end
-
-return
-
+    OUTBvsZ = zeros(size(OUTF,1), 2*size(OUTF,2));
+    OUTJvsZ = zeros(size(OUTJ,1), 2*size(OUTJ,2));
+    OUTBvsZ(:,1:2:end-1) = real(OUTF);
+    OUTBvsZ(:,2:2:end) = imag(OUTF);
+    OUTJvsZ(:,1:2:end-1) = real(OUTJ);
+    OUTJvsZ(:,2:2:end) = imag(OUTJ);
+    
+    OUTF = OUTF.';
+    OUTJ = OUTJ.';
+    OUTBvsT = zeros(size(OUTF,1), 2*size(OUTF,2));
+    OUTJvsT = zeros(size(OUTJ,1), 2*size(OUTJ,2));
+    OUTBvsT(:,1:2:end-1) = real(OUTF);
+    OUTBvsT(:,2:2:end) = imag(OUTF);
+    OUTJvsT(:,1:2:end-1) = real(OUTJ);
+    OUTJvsT(:,2:2:end) = imag(OUTJ);      
+    
+    OUTBvsZ = [OUTZAxis OUTBvsZ];
+    OUTJvsZ = [OUTZAxis OUTJvsZ];
+    
+    OUTBvsT = [OUTTAxis OUTBvsT];
+    OUTJvsT = [OUTTAxis OUTJvsT];
+    
+    fileParameters = sprintf('%s/%s', FolderName, 'parameters.txt');    
+    fileResultsBvsZ = sprintf('%s/%s', FolderName, 'resultsBvsZ.dat');
+    fileResultsJvsZ = sprintf('%s/%s', FolderName, 'resultsJvsZ.dat');
+    fileResultsBvsT = sprintf('%s/%s', FolderName, 'resultsBvsT.dat');
+    fileResultsJvsT = sprintf('%s/%s', FolderName, 'resultsJvsT.dat');
+    fileT = sprintf('%s/%s', FolderName, 'Time.dat');
+    fileZ = sprintf('%s/%s', FolderName, 'Z.dat');
+    
+    strParam = 'Ne = %d\nTend = %f\nLz = %f\nDelta = %f\nI = %f\ndz = %f\ndt = %f\n';
+    fileID = fopen(fileParameters ,'wt');
+    fprintf(fileID, strParam, Ne, Tend, Lz, Delta, Ic, dz, dt);
+    fclose(fileID);    
+    save(fileResultsBvsZ, 'OUTBvsZ', '-ascii');
+    save(fileResultsJvsZ, 'OUTJvsZ', '-ascii');
+    save(fileResultsBvsT, 'OUTBvsT', '-ascii');
+    save(fileResultsJvsT, 'OUTJvsT', '-ascii');
+    save(fileT, 'TAxis', '-ascii');
+    save(fileZ, 'ZAxis', '-ascii');
 end

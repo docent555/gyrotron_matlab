@@ -12,6 +12,7 @@ axFmax.XLabel.String = 't';
 axFmax.YLabel.String = '|F|_{max}';
 
 axFabs = subplot(2,2,3);
+axFabs.XLim = [0 z(end)];
 lHandleFabs = line(axFabs, nan, nan); %# Generate a blank line and return the line handle
 lHandleFabs.Color = 'black';
 lHandleFabs.LineWidth = 1;
@@ -30,6 +31,7 @@ axJmax.XLabel.String = 't';
 axJmax.YLabel.String = '|J|_{max}';
 
 axJabs = subplot(2,2,4);
+axJabs.XLim = [0 z(end)];
 lHandleJabs = line(axJabs, nan, nan); %# Generate a blank line and return the line handle
 lHandleJabs.Color = 'black';
 lHandleJabs.LineWidth = 1;
