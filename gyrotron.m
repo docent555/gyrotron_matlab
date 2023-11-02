@@ -95,16 +95,11 @@ end
 
 [OUTF, OUTJ] = gyroscr(Nz, Nt, Ne, ZAxis, TAxis, Delta, Ic, dt, dz, tol, INTT, INTZ, OUTNz, OUTNt, InitialField);
 
-% plot(RES.ZAxis(:,1), abs(RES.OUTF(:,end)))
-
-% if (isempty(TAxis) || isempty(OUTF))
-%     msgbox('First press the button "Solve"!')
-% else
-%     Folder = 'results/';
-%     
-%     hash = datestr(now,30);
-%     FolderName=sprintf('%s%s', Folder, hash);
-%     mkdir(FolderName);
+    Folder = 'results/';
+    
+    hash = datestr(now,30);
+    FolderName=sprintf('%s%s', Folder, hash);
+    mkdir(FolderName);
     
     % Âûגמה ג .mat פאיכ
 %     fileResults = sprintf('%s/%s', FolderName, 'results.mat');

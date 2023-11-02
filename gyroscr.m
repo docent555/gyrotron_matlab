@@ -30,7 +30,7 @@ OUTJ = complex(zeros(OUTNz, OUTNt));
 if INTZ > 1
     IZ = 0:INTZ:length(ZAxis);
     IZ(1) = 1;
-    SIZEZ = length(IZ);
+%     SIZEZ = length(IZ);
 else
     IZ = 1:INTZ:length(ZAxis);
 end
@@ -76,21 +76,8 @@ imidx = Ne+1:2*Ne;
 
 % Initial values
 field(:,1) = Field(:,1);
-% S1 = griddedInterpolant(ZAxis,field,'spline');
-fre = real(field);
-fim = imag(field);
-[reb,rec,red] = spline(Nz,ZAxis,fre);
-[imb,imc,imd] = spline(Nz,ZAxis,fim);
-S1 = @(z) seval_cmplx(z, Nz, ZAxis, fre, fim, reb, rec, red, imb, imc, imd);
-% SS = zeros(Nz,1);
-% for i=1:Nz
-%     SS(i) = real(S1(ZAxis(i)));
-% end
-% plot(ZAxis,SS);
-% pause
-[~, pv] = ode45(@(z, p) rhsv(z, p, Delta, S1, reidx, imidx) , ZAxis , p0v);
-% [~, p] = ode45(@(z, p) rhs(z, p, Delta, S1) , ZAxis , p0);
-p = pv(:,reidx) + 1i*pv(:,imidx);
+p = oscill_reim(field, Nz, ZAxis, Delta, p0v, reidx, imidx);
+% p = oscill_cmplx(field, ZAxis, Delta, p0);
 cu(:,1) = Ic * trapz(th0, p, 2)  / (2*pi);
 % cu(:,1) = Ic * trpz(dz, p, Ne)  / (2*pi);
 OUTJ(:,jout) = cu(IZ,1);
@@ -164,17 +151,10 @@ for step=1:steps
     %     lfield_p = ltridag(C,A,B,D);
     %     field_p = (rfield_p + lfield_p)/2.0D0;
     
-    maxfield = max(abs(field(:,1)));
+    maxfield = max(abs(field_p(:,1)));
     while 1
-%         S1 = griddedInterpolant(ZAxis,field,'spline');
-        fre = real(field);
-        fim = imag(field);
-        [reb,rec,red] = spline(Nz,ZAxis,fre);
-        [imb,imc,imd] = spline(Nz,ZAxis,fim);
-        S1 = @(z) seval_cmplx(z, Nz, ZAxis, fre, fim, reb, rec, red, imb, imc, imd);
-        [~, pv] = ode45(@(z, p) rhsv(z, p, Delta, S1, reidx, imidx) , ZAxis , p0v);
-        %         [~, p] = ode45(@(z, p) rhs(z, p, Delta, S1) , ZAxis , p0);
-        p = pv(:,reidx) + 1i*pv(:,imidx);
+        p = oscill_reim(field_p, Nz, ZAxis, Delta, p0v, reidx, imidx);
+%         p = oscill_cmplx(field_p, ZAxis, Delta, p0);
         cu_p(:,1) = Ic * trapz(th0, p, 2)  / (2.0D0*pi);
         %         cu_p(:,1) = Ic * trpz(dz, p, Ne)  / (2*pi);
         
@@ -205,15 +185,8 @@ for step=1:steps
     end
     
     field(:,1) = field_p(:,1);
-%     S1 = griddedInterpolant(ZAxis,field,'spline');
-    fre = real(field);
-    fim = imag(field);
-    [reb,rec,red] = spline(Nz,ZAxis,fre);
-    [imb,imc,imd] = spline(Nz,ZAxis,fim);
-    S1 = @(z) seval_cmplx(z, Nz, ZAxis, fre, fim, reb, rec, red, imb, imc, imd);
-    [~, pv] = ode45(@(z, p) rhsv(z, p, Delta, S1, reidx, imidx) , ZAxis , p0v);
-    %     [~, p] = ode45(@(z, p) rhs(z, p, Delta, S1) , ZAxis , p0);
-    p = pv(:,reidx) + 1i*pv(:,imidx);
+    p = oscill_reim(field, Nz, ZAxis, Delta, p0v, reidx, imidx);
+%     p = oscill_cmplx(field, ZAxis, Delta, p0);
     cu(:,1) = Ic * trapz(th0, p, 2)  / (2.0D0*pi);
     %     cu(:,1) = Ic * trpz(dz, p, Ne)  / (2*pi);
     fmax(IDX(step)) = max(abs(field(:,1)));
@@ -263,20 +236,5 @@ fprintf("ExecitionTime = %8.4f [h]   %8.4f [m]   %8.4f [s]\n", hours, minutes, s
 fprintf(" \n\n");
 end
 
-function uv = rhsv(z, pv, delta, a, reidx, imidx)
-
-p = pv(reidx) + 1i*pv(imidx);
-
-u = rhs(z, p, delta, a);
-
-uv = [real(u); imag(u)];
-
-end
-
-function u = rhs(z, p, delta, a)
-
-u = -a(z) - 1i*p.*(delta - 1.0D0 + abs(p).^2);
-
-end
 
 
