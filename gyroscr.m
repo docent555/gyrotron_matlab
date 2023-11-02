@@ -1,7 +1,4 @@
 function [OUTB, OUTJ] = gyroscr(Nz, Nt, Ne, ZAxis, TAxis, Delta, Ic, dt, dz, tol, INTT, INTZ, OUTNz, OUTNt, InitialField) %#codegen
-% function OUT = gyroscr(IN) %#codegen
-
-% fprintf('\nTime')
 
 Field = complex(zeros(size(InitialField,1),1));
 WR = complex(zeros(length(TAxis)+1,1));
@@ -13,21 +10,22 @@ SigmaNz = complex(zeros(length(TAxis)+1,1));
 SigmaNzm1 = complex(zeros(length(TAxis)+1,1));
 steps = length(TAxis) - 1;
 fmax = zeros(length(TAxis)+1, 1);
+jmax = zeros(length(TAxis)+1, 1);
 field = complex(zeros(length(Field),1));
-field_p = complex(zeros(length(Field),1));
-rfield_p = complex(zeros(length(Field),1));
-lfield_p = complex(zeros(length(Field),1));
-cu_p = zeros(length(ZAxis),1);
-cu = zeros(length(ZAxis),1);
-OUTB = zeros(OUTNz, OUTNt);
-OUTJ = zeros(OUTNz, OUTNt);
+% field_p = complex(zeros(length(Field),1));
+% rfield_p = complex(zeros(length(Field),1));
+% lfield_p = complex(zeros(length(Field),1));
+cu_p = complex(zeros(length(ZAxis),1));
+cu = complex(zeros(length(ZAxis),1));
+OUTB = complex(zeros(OUTNz, OUTNt));
+OUTJ = complex(zeros(OUTNz, OUTNt));
 % theta = zeros(length(ZAxis), Ne);
-p = zeros(Nz, Ne);
-pv = zeros(Nz, 2*Ne);
-p0 = zeros(Ne,1);
-p0v = zeros(2*Ne,1);
-reidx = zeros(Ne,1);
-imidx = zeros(Ne,1);
+% p = zeros(Nz, Ne);
+% pv = zeros(Nz, 2*Ne);
+% p0 = zeros(Ne,1);
+% p0v = zeros(2*Ne,1);
+% reidx = zeros(1,Ne);
+% imidx = zeros(1,Ne);
 
 if INTZ > 1
     IZ = 0:INTZ:length(ZAxis);
@@ -52,19 +50,13 @@ SQRDT = sqrt(dt);
 SQRDZ = dz*dz;
 
 C0 = 1.0D0;
-% C0 = -1i;
-% C0 = 1i;
 CR = 0;
 C2 = 1.0D0/sqrt(1i*pi);
-% C2 = 1/sqrt(-1i*pi);
-% WNz = -((2.0D0/3.0D0*C0*dz/dt + kpar2(end)*dz/3.0D0) - 1.0D0/dz);
-% WNzm1 = -((C0/3.0D0*dz/dt + kpar2(end-1)*dz/6.0D0) + 1.0D0/dz);
 WNz = -((-1i*2.0D0/3.0D0*C0*dz/dt + kpar2(end)*dz/3.0D0) - 1.0D0/dz);
 WNzm1 = -((-1i*C0/3.0D0*dz/dt + kpar2(end-1)*dz/6.0D0) + 1.0D0/dz);
 
 
 A(1) = 1.0D0;
-% A(2:end-1) = -2.0D0*(1.0D0 - dz/dt*C0*dz - dz*kpar2(2:end-1)*dz/2.0D0);
 A(2:end-1) = -2.0D0*(1.0D0 + 1i * dz/dt*C0*dz - dz*kpar2(2:end-1)*dz/2.0D0);
 A(end) = 1.0D0 + 4.0D0/3.0D0*C2*WNz*SQRDT;
 B(1) = 0;
@@ -72,28 +64,41 @@ B(2:end) = 1.0D0;
 C(1:end-1) = 1.0D0;
 C(end) = 4.0D0/3.0D0*C2*WNzm1*SQRDT;
 
-% M = spdiags([[C; 0] A [0 ;B]], -1:1, N, N);
+M = spdiags([[C; 0] A [0 ;B]], -1:1, N, N);
 
 jout = 1;
 OUTB(:, jout) = Field(IZ,1);
 th0 = 2.0D0*pi*(0:Ne-1)/Ne;
-p0 = (2.0D0*pi*(0:Ne-1)/Ne)';
+p0 = exp(1i*th0)';
 p0v = [real(p0); imag(p0)];
 reidx = 1:Ne;
 imidx = Ne+1:2*Ne;
 
 % Initial values
 field(:,1) = Field(:,1);
-% theta(:,:) = pendulumODE(field(:,1), ZAxis(:,1), th0(1,:), Delta);
-S1 = griddedInterpolant(ZAxis,field,'spline');
+% S1 = griddedInterpolant(ZAxis,field,'spline');
+fre = real(field);
+fim = imag(field);
+[reb,rec,red] = spline(Nz,ZAxis,fre);
+[imb,imc,imd] = spline(Nz,ZAxis,fim);
+S1 = @(z) seval_cmplx(z, Nz, ZAxis, fre, fim, reb, rec, red, imb, imc, imd);
+% SS = zeros(Nz,1);
+% for i=1:Nz
+%     SS(i) = real(S1(ZAxis(i)));
+% end
+% plot(ZAxis,SS);
+% pause
 [~, pv] = ode45(@(z, p) rhsv(z, p, Delta, S1, reidx, imidx) , ZAxis , p0v);
+% [~, p] = ode45(@(z, p) rhs(z, p, Delta, S1) , ZAxis , p0);
 p = pv(:,reidx) + 1i*pv(:,imidx);
 cu(:,1) = Ic * trapz(th0, p, 2)  / (2*pi);
+% cu(:,1) = Ic * trpz(dz, p, Ne)  / (2*pi);
 OUTJ(:,jout) = cu(IZ,1);
 
 IDX = @(j) (j + 1);
 
 fmax(IDX(0)) = max(abs(field(:,1)));
+jmax(IDX(0)) = max(abs(cu(:,1)));
 FNz(IDX(0)) = field(end);
 FNzm1(IDX(0)) = field(end-1);
 JNz(IDX(0)) = cu(end);
@@ -105,28 +110,29 @@ WR(IDX(0)) = dz * (2.0D0/3.0D0*(2.0D0 * JNz(IDX(0)) + JNzm1(IDX(0))));
 
 SHOW = 1;
 if SHOW == 1
-    [lhr, lha, hFig] = makeFig(ZAxis, TAxis);
+    [lhfmax, lhfabs, lhjmax, lhjabs, hFig] = makeFig(ZAxis, TAxis);
 end
 
 fprintf('\n');
 timerVal = tic;
-for step=1:steps 
+for step=1:steps
     
-    if SHOW == 1
-        lHandleB.YData = abs(field(:,1));
-        lHandleJ.YData = abs(cu(:,1));
-        lhr.YData(1:step) = fmax(1:step);
-        lhr.XData(1:step) = TAxis(1:step);
-        lha.YData = abs(field);
-        drawnow
-    end           
- 
-%     WR(IDX(step)) = dz * ((C0 * 2.0D0/3.0D0/dt - kpar2(end)/3.0D0) * FNz(IDX(step-1))...
-%         + (C0/3.0D0/dt - kpar2(end - 1)/6.0D0) * FNzm1(IDX(step-1))...
-%         + 1.0D0/6.0D0*(4.0D0 * JNz(IDX(step-1)) + 2.0D0 * JNzm1(IDX(step-1))) - (2.0D0 * SigmaNz(IDX(step-1)) + SigmaNzm1(IDX(step-1)))); 
+        if SHOW == 1
+            lHandleB.YData = abs(field(:,1));
+            lHandleJ.YData = abs(cu(:,1));
+            lhfmax.YData(1:step) = fmax(1:step);
+            lhfmax.XData(1:step) = TAxis(1:step);
+            lhfabs.YData = abs(field);
+            
+            lhjmax.YData(1:step) = jmax(1:step);
+            lhjmax.XData(1:step) = TAxis(1:step);
+            lhjabs.YData = abs(cu);
+            drawnow
+        end
+    
     WR(IDX(step)) = dz * ((-1i*C0 * 2.0D0/3.0D0/dt - kpar2(end)/3.0D0) * FNz(IDX(step-1))...
         + (-1i*C0/3.0D0/dt - kpar2(end - 1)/6.0D0) * FNzm1(IDX(step-1))...
-        + 1.0D0/6.0D0*(4.0D0 * JNz(IDX(step-1)) + 2.0D0 * JNzm1(IDX(step-1))) - (2.0D0 * SigmaNz(IDX(step-1)) + SigmaNzm1(IDX(step-1)))); 
+        + 1.0D0/6.0D0*(4.0D0 * JNz(IDX(step-1)) + 2.0D0 * JNzm1(IDX(step-1))) - (2.0D0 * SigmaNz(IDX(step-1)) + SigmaNzm1(IDX(step-1))));
     
     u = @(j) (WNzm1 * FNzm1(IDX(j)) + WNz * FNz(IDX(j)) + WR(IDX(j))).' .* exp(CR * dt * (step - j));
     
@@ -135,57 +141,60 @@ for step=1:steps
     elseif step == 2
         IR = 4.0D0/3.0D0 * SQRDT * (u(0)*(1 - SQR2D2) + u(1)*(SQR2M2 - 2.5D0));
     else
-%         j = 1:step-2;
-%         IR = 4.0D0/3.0D0 * SQRDT * (u(0)*((step - 1).^(1.5) - (step - 1.5)*sqrt(step))...
-%             + sum(u(j).*((step - j - 1).^(1.5) - 2*(step - j).^(1.5) + (step - j + 1).^(1.5)))...
-%             + u(step - 1)*(SQR2M2 - 2.5));
+        %         j = 1:step-2;
+        %         IR = 4.0D0/3.0D0 * SQRDT * (u(0)*((step - 1).^(1.5) - (step - 1.5)*sqrt(step))...
+        %             + sum(u(j).*((step - j - 1).^(1.5) - 2*(step - j).^(1.5) + (step - j + 1).^(1.5)))...
+        %             + u(step - 1)*(SQR2M2 - 2.5));
         IR = 4.0D0/3.0D0 * SQRDT * (u(0)*((step - 1.0D0).^(1.5) - (step - 1.5D0)*sqrt(step)) + u(step - 1)*(SQR2M2 - 2.5D0));
         for j = 1:step-2
             IR = IR + 4.0D0/3.0D0 * SQRDT * (u(j).*((step - j - 1.0D0).^(1.5) - 2.0D0*(step - j).^(1.5) + (step - j + 1.0D0).^(1.5)));
         end
-    end    
+    end
     
     D(1) = 0;
     %         D(1) = IN.TimeAmp * exp(1i * IN.TimeFreq * AxisTau(step));
-    
     D(2:end - 1) = -1i*SQRDZ * (2.0D0*cu(2:end-1)) ...
         + 2.0D0 * (1.0D0 -1i* C0 * SQRDZ/dt - SQRDZ * kpar2(2:end-1) / 2.0D0) .* field(2:end - 1)...
-        - (field(1:end - 2) + field(3:end));      
+        - (field(1:end - 2) + field(3:end));
     D(end) = -C2 * (IR + 4.0D0/3.0D0 * WR(IDX(step)) * SQRDT + 2.0D0 / 3.0D0 * SQRDT * (WNzm1 * field(end - 1)...
         + WNz * field(end) + WR(IDX(step-1))) * exp(CR * dt));
     
     % nesamosoglasovannoe pole
-%     field_p = M \ D;
-    rfield_p = rtridag(C,A,B,D);
-    lfield_p = ltridag(C,A,B,D);
-    field_p = (rfield_p + lfield_p)/2.0D0;        
+    field_p = M \ D;
+    %     rfield_p = rtridag(C,A,B,D);
+    %     lfield_p = ltridag(C,A,B,D);
+    %     field_p = (rfield_p + lfield_p)/2.0D0;
     
-    maxfield = max(abs(field(:,1)));    
-    while 1        
-        S1 = griddedInterpolant(ZAxis,field,'spline');
+    maxfield = max(abs(field(:,1)));
+    while 1
+%         S1 = griddedInterpolant(ZAxis,field,'spline');
+        fre = real(field);
+        fim = imag(field);
+        [reb,rec,red] = spline(Nz,ZAxis,fre);
+        [imb,imc,imd] = spline(Nz,ZAxis,fim);
+        S1 = @(z) seval_cmplx(z, Nz, ZAxis, fre, fim, reb, rec, red, imb, imc, imd);
         [~, pv] = ode45(@(z, p) rhsv(z, p, Delta, S1, reidx, imidx) , ZAxis , p0v);
+        %         [~, p] = ode45(@(z, p) rhs(z, p, Delta, S1) , ZAxis , p0);
         p = pv(:,reidx) + 1i*pv(:,imidx);
         cu_p(:,1) = Ic * trapz(th0, p, 2)  / (2.0D0*pi);
-
-%         theta(:,:) = pendulumODE(field_p(:,1), ZAxis(:,1), th0(1,:), Delta);
-%         cu_p(:,1) = Ic * 2.0D0 / Ne * sum(exp(-1i*theta), 2);               
+        %         cu_p(:,1) = Ic * trpz(dz, p, Ne)  / (2*pi);
         
         WR(IDX(step)) = dz * ((-1i*C0 * 2.0D0/3.0D0 / dt - kpar2(end) / 3.0D0) * field(end)...
             + (-1i*C0 / 3.0D0 / dt - kpar2(end - 1) / 6.0D0)*field(end - 1)...
-            + 1.0D0/6.0D0 * (2.0D0 * cu_p(end) + 2.0D0 * cu(end) + cu_p(end - 1) + cu(end - 1)) - (2.0D0 * SigmaNz(IDX(step-1)) + SigmaNzm1(IDX(step-1))));          
-
+            + 1.0D0/6.0D0 * (2.0D0 * cu_p(end) + 2.0D0 * cu(end) + cu_p(end - 1) + cu(end - 1)) - (2.0D0 * SigmaNz(IDX(step-1)) + SigmaNzm1(IDX(step-1))));
+        
         D(2:end - 1) = -1i*SQRDZ * (cu_p(2:end - 1) + cu(2:end - 1)) ...
             + 2.0D0 * (1.0D0 -1i* C0 * SQRDZ / dt - SQRDZ * kpar2(2:end - 1) / 2.0D0).*field(2:end - 1)...
             - (field(1:end - 2) + field(3:end));
         D(end) = -C2 * (IR + 4.0D0/3.0D0 * WR(IDX(step)) * SQRDT + 2.0D0/3.0D0 * SQRDT * (WNzm1 * field(end - 1)...
             + WNz * field(end) + WR(IDX(step-1))) * exp(CR * dt));
-               
+        
         
         % samosoglasovannoe pole
-%         field_p(:,1) = M \ D;
-        rfield_p(:,1) = rtridag(C,A,B,D);
-        lfield_p(:,1) = rtridag(C,A,B,D);
-        field_p = (rfield_p + lfield_p)/2.0D0;
+        field_p(:,1) = M \ D;
+        %         rfield_p(:,1) = rtridag(C,A,B,D);
+        %         lfield_p(:,1) = ltridag(C,A,B,D);
+        %         field_p = (rfield_p + lfield_p)/2.0D0;
         
         
         maxfield_p = max(abs(field_p(:,1)));
@@ -197,13 +206,19 @@ for step=1:steps
     end
     
     field(:,1) = field_p(:,1);
-    S1 = griddedInterpolant(ZAxis,field,'spline');
+%     S1 = griddedInterpolant(ZAxis,field,'spline');
+    fre = real(field);
+    fim = imag(field);
+    [reb,rec,red] = spline(Nz,ZAxis,fre);
+    [imb,imc,imd] = spline(Nz,ZAxis,fim);
+    S1 = @(z) seval_cmplx(z, Nz, ZAxis, fre, fim, reb, rec, red, imb, imc, imd);
     [~, pv] = ode45(@(z, p) rhsv(z, p, Delta, S1, reidx, imidx) , ZAxis , p0v);
+    %     [~, p] = ode45(@(z, p) rhs(z, p, Delta, S1) , ZAxis , p0);
     p = pv(:,reidx) + 1i*pv(:,imidx);
     cu(:,1) = Ic * trapz(th0, p, 2)  / (2.0D0*pi);
-%     theta(:,:) = pendulumODE(field(:,1), ZAxis(:,1), th0(1,:), Delta);
-%     cu(:,1) = Ic * 2.0D0 / Ne * sum(exp(-1i*theta), 2);
+    %     cu(:,1) = Ic * trpz(dz, p, Ne)  / (2*pi);
     fmax(IDX(step)) = max(abs(field(:,1)));
+    jmax(IDX(step)) = max(abs(cu(:,1)));
     
     k = step + 1;
     
@@ -216,14 +231,8 @@ for step=1:steps
     FNz(IDX(step)) =  field(end);
     FNzm1(IDX(step)) = field(end - 1);
     JNz(IDX(step)) = cu(end);
-    JNzm1(IDX(step)) = cu(end - 1); 
+    JNzm1(IDX(step)) = cu(end - 1);
     
-%     SigmaNz(IDX(step)) = -(kpar2(end)/6.0D0 + C0/3.0D0/dt) * FNz(IDX(step)) ...
-%         + (C0/3.0D0/dt - kpar2(end)/6.0D0) * FNz(IDX(step - 1)) ...
-%         + 1.0D0/6.0D0*(JNz(IDX(step)) + JNz(IDX(step - 1))) - SigmaNz(IDX(step - 1));
-%     SigmaNzm1(IDX(step)) = -(kpar2(end - 1)/6.0D0 + C0/3.0D0/dt) * FNzm1(IDX(step)) ...
-%         + (C0/3.0D0/dt - kpar2(end - 1)/6.0D0) * FNzm1(IDX(step - 1)) ...
-%         + 1.0D0/6.0D0*(JNzm1(IDX(step)) + JNzm1(IDX(step - 1))) - SigmaNzm1(IDX(step - 1));
     SigmaNz(IDX(step)) = -(kpar2(end)/6.0D0 -1i* C0/3.0D0/dt) * FNz(IDX(step)) ...
         + (-1i*C0/3.0D0/dt - kpar2(end)/6.0D0) * FNz(IDX(step - 1)) ...
         -1i /6.0D0*(JNz(IDX(step)) + JNz(IDX(step - 1))) - SigmaNz(IDX(step - 1));
@@ -236,10 +245,7 @@ for step=1:steps
         '\b\b\b\b\b\b\b\b\b\b\b\b\b\b\b\b\b\b\b\b'...
         '\b\b\b\b\b\b\b\b\b\b\b\b\b\b\b\b\b\b\b\b\b\b\b'...
         'Step = %8i   Time = %8.4f   Bmax = %15.10f   Jmax = %15.10f'],...
-        step, TAxis(k), fmax(k), max(abs(cu(:,1))));
-    
-%     str = sprintf('Step = %8i   Time = %8.4f   Bmax = %15.10f   Jmax = %15.10f', step, TAxis(k), fmax(k), max(abs(cu(:,1))));    
-%     disp(str);
+        int64(step), TAxis(k), fmax(k), max(abs(cu(:,1))));
     
 end
 
@@ -260,14 +266,11 @@ end
 
 function uv = rhsv(z, pv, delta, a, reidx, imidx)
 
-uv = zeros(2*size(reidx,1),1);
-
 p = pv(reidx) + 1i*pv(imidx);
 
 u = rhs(z, p, delta, a);
 
-uv(reidx) = real(u);
-uv(imidx) = imag(u);
+uv = [real(u); imag(u)];
 
 end
 
