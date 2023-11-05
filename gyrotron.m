@@ -46,6 +46,7 @@ end
 
 ZBEG = 0;
 ZEND = 0.5;
+% ZEND = Lz;
 IND1 = (ZAxis > ZBEG & ZAxis < ZEND);
 % InitialField(IND1,1) = 0.001*sin(pi * (ZAxis(IND1) - ZBEG) / (ZEND - ZBEG)).^2;
 InitialField(IND1,1) = sin(pi * (ZAxis(IND1) - ZBEG) / (ZEND - ZBEG)).^2;

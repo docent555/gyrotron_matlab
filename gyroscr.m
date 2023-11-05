@@ -12,9 +12,9 @@ steps = length(TAxis) - 1;
 fmax = zeros(length(TAxis)+1, 1);
 jmax = zeros(length(TAxis)+1, 1);
 field = complex(zeros(length(Field),1));
-% field_p = complex(zeros(length(Field),1));
-% rfield_p = complex(zeros(length(Field),1));
-% lfield_p = complex(zeros(length(Field),1));
+field_p = complex(zeros(length(Field),1));
+rfield_p = complex(zeros(length(Field),1));
+lfield_p = complex(zeros(length(Field),1));
 cu_p = complex(zeros(length(ZAxis),1));
 cu = complex(zeros(length(ZAxis),1));
 OUTB = complex(zeros(OUTNz, OUTNt));
@@ -57,7 +57,8 @@ WNzm1 = -((-1i*C0/3.0D0*dz/dt + kpar2(end-1)*dz/6.0D0) + 1.0D0/dz);
 
 
 A(1) = 1.0D0;
-A(2:end-1) = -2.0D0*(1.0D0 + 1i * dz/dt*C0*dz - dz*kpar2(2:end-1)*dz/2.0D0);
+% A(2:end-1) = -2.0D0*(1.0D0 + 1i * dz/dt*C0*dz - dz*kpar2(2:end-1)*dz/2.0D0);
+A(2:end-1) = -2.0D0*(1.0D0 + 1i * SQRDZ/dt*C0 - dz*kpar2(2:end-1)*dz/2.0D0);
 A(end) = 1.0D0 + 4.0D0/3.0D0*C2*WNz*SQRDT;
 B(1) = 0;
 B(2:end) = 1.0D0;
@@ -147,12 +148,14 @@ for step=1:steps
     
     % nesamosoglasovannoe pole
     field_p = M \ D;
-    %     rfield_p = rtridag(C,A,B,D);
-    %     lfield_p = ltridag(C,A,B,D);
-    %     field_p = (rfield_p + lfield_p)/2.0D0;
+%     rfield_p = rtridag(C,A,B,D);
+%     lfield_p = ltridag(C,A,B,D);
+%     field_p = (rfield_p + lfield_p)/2.0D0;
     
+    num_insteps = 0;
     maxfield = max(abs(field_p(:,1)));
     while 1
+        num_insteps = num_insteps + 1;
         p = oscill_reim(field_p, Nz, ZAxis, Delta, p0v, reidx, imidx);
 %         p = oscill_cmplx(field_p, ZAxis, Delta, p0);
         cu_p(:,1) = Ic * trapz(th0, p, 2)  / (2.0D0*pi);
@@ -171,9 +174,9 @@ for step=1:steps
         
         % samosoglasovannoe pole
         field_p(:,1) = M \ D;
-        %         rfield_p(:,1) = rtridag(C,A,B,D);
-        %         lfield_p(:,1) = ltridag(C,A,B,D);
-        %         field_p = (rfield_p + lfield_p)/2.0D0;
+%         rfield_p(:,1) = rtridag(C,A,B,D);
+%         lfield_p(:,1) = ltridag(C,A,B,D);
+%         field_p = (rfield_p + lfield_p)/2.0D0;
         
         
         maxfield_p = max(abs(field_p(:,1)));
@@ -181,7 +184,10 @@ for step=1:steps
         if maxdiff < tol
             break
         end
-        maxfield = maxfield_p;
+        maxfield = maxfield_p; 
+        if num_insteps > 3000
+            error('Too many inner steps!');
+        end
     end
     
     field(:,1) = field_p(:,1);
@@ -216,8 +222,9 @@ for step=1:steps
         '\b\b\b\b\b\b\b\b\b\b\b\b\b\b\b\b\b\b\b\b'...
         '\b\b\b\b\b\b\b\b\b\b\b\b\b\b\b\b\b\b\b\b'...
         '\b\b\b\b\b\b\b\b\b\b\b\b\b\b\b\b\b\b\b\b\b\b\b'...
-        'Step = %8i   Time = %8.4f   Bmax = %15.10f   Jmax = %15.10f'],...
-        int64(step), TAxis(k), fmax(k), max(abs(cu(:,1))));
+        '\b\b\b\b\b\b\b\b\b\b\b\b\b\b\b\b\b\b\b\b\b\b\b\b\b\b\b\b'...
+        'Step = %8i   Time = %8.4f   Bmax = %15.10f   Jmax = %15.10f   Num. inner st. = %8i'],...
+        int64(step), TAxis(k), fmax(k), max(abs(cu(:,1))), num_insteps);
     
 end
 
