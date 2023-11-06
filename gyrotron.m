@@ -72,7 +72,7 @@ if convert == true
 else
     ZetaEx = Lz;
     TauEnd = Tend;
-    kpar2 = ones(Nz,1);
+    kpar2 = zeros(Nz,1);
 end
 
 ZAxis = zeros(Nz, 1);
@@ -92,7 +92,7 @@ ZBEG = 0;
 ZEND = ZetaEx;
 IND1 = (ZAxis > ZBEG & ZAxis < ZEND);
 % InitialField(IND1,1) = 0.001*sin(pi * (ZAxis(IND1) - ZBEG) / (ZEND - ZBEG)).^2;
-InitialField(IND1,1) = 0.1*sin(pi * (ZAxis(IND1) - ZBEG) / (ZEND - ZBEG)).^2;
+InitialField(IND1,1) = 1*sin(pi * (ZAxis(IND1) - ZBEG) / (ZEND - ZBEG)).^2;
 % InitialField = ones(length(ZAxis),1) + 1i*ones(length(ZAxis),1);
 
 % infield=[real(InitialField) imag(InitialField)];

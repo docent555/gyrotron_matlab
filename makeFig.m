@@ -28,7 +28,7 @@ lHandleJmax.Color = 'black';
 lHandleJmax.LineWidth = 1;
 axJmax.FontSize = 12;
 axJmax.XLabel.String = 't';
-axJmax.YLabel.String = '|J|_{max}';
+axJmax.YLabel.String = 'Efficiency';
 
 axJabs = subplot(2,2,4);
 axJabs.XLim = [0 z(end)];

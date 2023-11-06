@@ -21,6 +21,7 @@ J_p = complex(zeros(length(ZAxis),1));
 J = complex(zeros(length(ZAxis),1));
 OUTF = complex(zeros(OUTNz, OUTNt));
 OUTJ = complex(zeros(OUTNz, OUTNt));
+Eff = complex(zeros(length(TAxis)+1,1));
 % theta = zeros(length(ZAxis), Ne);
 % p = zeros(Nz, Ne);
 % pv = zeros(Nz, 2*Ne);
@@ -86,6 +87,7 @@ J(:,1) = Ic * trapz(th0, p, 2)  / (2*pi);
 cu(:,1) = J(:) - 1i*kpar2(:).*field(:);
 OUTJ(:,jout) = J(IZ,1);
 
+
 IDX = @(j) (j + 1);
 
 fmax(IDX(0)) = max(abs(field(:,1)));
@@ -96,6 +98,7 @@ JNz(IDX(0)) = cu(end);
 JNzm1(IDX(0)) = cu(end-1);
 SigmaNz(IDX(0)) = 0;
 SigmaNzm1(IDX(0)) = 0;
+Eff(IDX(0)) = 1 - trapz(th0, abs(p(end,:).^2))/(2*pi);
 
 WR(IDX(0)) = dz * (2.0D0/3.0D0*(2.0D0 * JNz(IDX(0)) + JNzm1(IDX(0))));
 
@@ -113,7 +116,7 @@ for step=1:steps
             lhfmax.XData(1:step) = TAxis(1:step);
             lhfabs.YData = abs(field);
             
-            lhjmax.YData(1:step) = jmax(1:step);
+            lhjmax.YData(1:step) = Eff(1:step);
             lhjmax.XData(1:step) = TAxis(1:step);
             lhjabs.YData = abs(J);
             
@@ -122,7 +125,7 @@ for step=1:steps
     
     WR(IDX(step)) = dz * ((-1i*C0 * 2.0D0/3.0D0/dt) * FNz(IDX(step-1))...
         + (-1i*C0/3.0D0/dt) * FNzm1(IDX(step-1))...
-        + 1i/6.0D0*(4.0D0 * JNz(IDX(step-1)) + 2.0D0 * JNzm1(IDX(step-1))) - (2.0D0 * SigmaNz(IDX(step-1)) + SigmaNzm1(IDX(step-1))));
+        - 1i/6.0D0*(4.0D0 * JNz(IDX(step-1)) + 2.0D0 * JNzm1(IDX(step-1))) - (2.0D0 * SigmaNz(IDX(step-1)) + SigmaNzm1(IDX(step-1))));
     
     u = @(j) (WNzm1 * FNzm1(IDX(j)) + WNz * FNz(IDX(j)) + WR(IDX(j))).' .* exp(CR * dt * (step - j));
     
@@ -165,9 +168,9 @@ for step=1:steps
         %         J_p(:,1) = Ic * trpz(dz, p, Ne)  / (2*pi);
         cu_p(:,1) = J_p(:) - 1i*kpar2(:).*field_p(:);
         
-        WR(IDX(step)) = dz * ((-1i*C0 * 2.0D0/3.0D0 / dt - kpar2(end) / 3.0D0) * field(end)...
+        WR(IDX(step)) = dz * ((-1i*C0 * 2.0D0/3.0D0 / dt) * field(end)...
             + (-1i*C0 / 3.0D0 / dt)*field(end - 1)...
-            + 1i/6.0D0 * (2.0D0 * cu_p(end) + 2.0D0 * cu(end) + cu_p(end - 1) + cu(end - 1)) - (2.0D0 * SigmaNz(IDX(step-1)) + SigmaNzm1(IDX(step-1))));
+            - 1i/6.0D0 * (2.0D0 * cu_p(end) + 2.0D0 * cu(end) + cu_p(end - 1) + cu(end - 1)) - (2.0D0 * SigmaNz(IDX(step-1)) + SigmaNzm1(IDX(step-1))));
         
         D(2:end - 1) = -1i*SQRDZ * (cu_p(2:end - 1) + cu(2:end - 1)) ...
             + 2.0D0 * (1.0D0 -1i* C0 * SQRDZ / dt).*field(2:end - 1)...
@@ -202,6 +205,7 @@ for step=1:steps
     cu(:,1) = J(:) - 1i*kpar2(:).*field(:);
     fmax(IDX(step)) = max(abs(field(:,1)));
     jmax(IDX(step)) = max(abs(cu(:,1)));
+    Eff(IDX(step)) = 1 - trapz(th0, abs(p(end,:).^2))/(2*pi);
     
     k = step + 1;
     
@@ -233,7 +237,7 @@ for step=1:steps
     
 end
 
-OUTJ(:,jout) = cu(IZ,1);
+OUTJ(:,jout) = J(IZ,1);
 
 fprintf("\n\n\n");
 
