@@ -92,7 +92,7 @@ ZBEG = 0;
 ZEND = ZetaEx;
 IND1 = (ZAxis > ZBEG & ZAxis < ZEND);
 % InitialField(IND1,1) = 0.001*sin(pi * (ZAxis(IND1) - ZBEG) / (ZEND - ZBEG)).^2;
-InitialField(IND1,1) = 1*sin(pi * (ZAxis(IND1) - ZBEG) / (ZEND - ZBEG)).^2;
+InitialField(IND1,1) = 0.01*sin(pi * (ZAxis(IND1) - ZBEG) / (ZEND - ZBEG)).^2;
 % InitialField = ones(length(ZAxis),1) + 1i*ones(length(ZAxis),1);
 
 % infield=[real(InitialField) imag(InitialField)];
