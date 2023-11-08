@@ -174,10 +174,10 @@ for step=1:Nt-1
     D(Nz) = - coeff_C2_m_coeff_4_d_3_m_SQRDT * WR(IDX(step)) + D_END_PART;
     
     % nesamosoglasovannoe pole
-%     field_p = M \ D;
-    rfield_p = rtridag(C,A,B,D);
-    lfield_p = ltridag(C,A,B,D);
-    field_p = (rfield_p + lfield_p)/2.0D0;
+    field_p = M \ D;
+%     rfield_p = rtridag(C,A,B,D);
+%     lfield_p = ltridag(C,A,B,D);
+%     field_p = (rfield_p + lfield_p)/2.0D0;
     
     num_insteps = 0;
     maxfield = max(abs(field_p(:,1)));
@@ -197,10 +197,10 @@ for step=1:Nt-1
         
         
         % samosoglasovannoe pole
-%         field_p(:,1) = M \ D;
-        rfield_p(:,1) = rtridag(C,A,B,D);
-        lfield_p(:,1) = ltridag(C,A,B,D);
-        field_p = (rfield_p + lfield_p)/2.0D0;
+        field_p(:,1) = M \ D;
+%         rfield_p(:,1) = rtridag(C,A,B,D);
+%         lfield_p(:,1) = ltridag(C,A,B,D);
+%         field_p = (rfield_p + lfield_p)/2.0D0;
         
         
         maxfield_p = max(abs(field_p(:,1)));
@@ -262,9 +262,10 @@ for step=1:Nt-1
         '\b\b\b\b\b\b\b\b\b\b\b\b\b\b\b\b\b\b\b\b'...
         '\b\b\b\b\b\b\b\b\b\b\b\b\b\b\b\b\b\b\b\b'...
         '\b\b\b\b\b\b\b\b\b\b\b\b\b\b\b\b\b\b\b\b\b\b\b'...
-        '\b\b\b\b\b\b\b\b\b\b\b\b\b\b\b\b\b\b\b\b\b\b\b\b\b\b\b\b'...
-        'Step = %8i   Time = %8.4f   Bmax = %15.10f   Jmax = %15.10f   Num. inner st. = %8i'],...
-        int64(step), TAxis(k), fmax(k), max(abs(cu(:,1))), num_insteps);
+        '\b\b\b\b\b\b\b\b\b\b\b\b\b\b\b\b\b\b\b\b\b\b\b'...
+        '\b\b\b\b\b\b\b\b\b\b\b\b\b\b\b\b\b\b\b\b\b\b\b\b\b\b\b\b\b\b\b'...        
+        'Step = %8i   Time = %10.4f   Bmax = %+15.10e   Jmax = %+15.10e   W = %+15.10e   E = %+15.10e'],...
+        int64(step), TAxis(k), fmax(k), max(abs(cu(:,1))), Omega(IDX(step)), Eff(IDX(step)));
     
 end
 
