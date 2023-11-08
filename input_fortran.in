@@ -1,0 +1,18 @@
+& param
+Ne = 256
+Nz = 0
+Lz = 3
+Tend = 1
+Delta = 0.3
+I0 = 0
+R0 = 2.077
+Rb = 0.827
+g = 1.2
+ukv = 100
+dz = 0.005
+dt = 0.000025
+tol = 1e-8
+INTT = 20
+INTZ = 20
+SPLINE = 0
+/

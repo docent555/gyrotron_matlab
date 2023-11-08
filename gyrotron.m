@@ -1,9 +1,27 @@
-function [OUTFre, OUTFim, OUTJre, OUTJim, OUTZAxis, OUTTAxis] = ...
-    gyrotron(Ne, Nz, Lz, Tend, Delta, I0, R0, Rb, g, ukv, dz, dt, tol, INTT, INTZ, SPLINE) %#codegen
+function [OUTFre, OUTFim, OUTJre, OUTJim, OUTZAxis, OUTTAxis, Eff, Omega, jout] = gyrotron() %#codegen
 
-if nargin < 8
-    fprintf('USAGE: orotron Ne Lz Tend Delta I dz dt\n')
-end
+input_param = read_namelist('input_fortran.in', 'param');
+
+Ne = input_param.ne;
+Nz = input_param.nz;
+Lz = input_param.lz;
+Tend = input_param.tend;
+Delta = input_param.delta;
+I0 = input_param.i0;
+R0 = input_param.r0;
+Rb = input_param.rb;
+g = input_param.g;
+ukv = input_param.ukv;
+dz = input_param.dz;
+dt = input_param.dt;
+tol = input_param.tol;
+INTT = input_param.intt;
+INTZ = input_param.intz;
+SPLINE = input_param.spline;
+
+% if nargin < 8
+%     fprintf('USAGE: orotron Ne Lz Tend Delta I dz dt\n')
+% end
 
 convert = true;
 if Nz == 0
@@ -29,12 +47,13 @@ m = 9.1093837015e-28; % [g]
 % m = 9.1093837015e-31; % [кг]
 
 % Вычислене nu (мода ТЕ28.12)
-syms x;
-dydx = matlabFunction(diff(besselj(28, x), x));
+% syms x;
+% dydx = matlabFunction(diff(besselj(28, x), x));
 % z=0:0.01:100;
 % plot(z,dydx(z))
-approx = 74;
-nu = fzero(dydx, approx);
+% approx = 74;
+% nu = fzero(dydx, approx)
+nu = 73.952055635763557;
 
 w_op = c * nu / R0;
 
@@ -48,7 +67,6 @@ if convert == true
     % delta(z)
     dz = ZetaEx/(Nz-1);
     dt = dz*dz;
-    Nt = fix(TauEnd/dt/100000000) + 1;
     Rr_file = load('d:\Alex\Documents\Work\novozhilova\22-09-23 Продольная структура и профиль рез-ра\RR2812.dat');
     ZAxis = 0:dz:ZetaEx;
     Rr = zeros(Nz,1);
@@ -60,6 +78,7 @@ if convert == true
             %    y(i) = uval(x(i),Rr(:,1),Rr(:,2));
             Rr(i) = seval(x(i), length(Rr_file(:,1)), Rr_file(:,1), Rr_file(:,2), ba, ca, da);
         end
+        Rr(:) = Rr(:)/10; % в миллиметрах
     else
         for i=1:length(x)
             Rr(i) = uval(x(i),Rr_file(:,1),Rr_file(:,2));
@@ -75,6 +94,8 @@ else
     kpar2 = zeros(Nz,1);
 end
 
+Nt = fix(Tend/dt) + 1;
+
 ZAxis = zeros(Nz, 1);
 TAxis = zeros(Nt, 1);
 InitialField = zeros(Nz,1);
@@ -88,15 +109,12 @@ for i=1:Nt
 end
 
 ZBEG = 0;
-% ZEND = .5;
-ZEND = ZetaEx;
+ZEND = .5;
+% ZEND = ZetaEx;
 IND1 = (ZAxis > ZBEG & ZAxis < ZEND);
 % InitialField(IND1,1) = 0.001*sin(pi * (ZAxis(IND1) - ZBEG) / (ZEND - ZBEG)).^2;
-InitialField(IND1,1) = 0.01*sin(pi * (ZAxis(IND1) - ZBEG) / (ZEND - ZBEG)).^2;
+InitialField(IND1,1) = sin(pi * (ZAxis(IND1) - ZBEG) / (ZEND - ZBEG)).^2;
 % InitialField = ones(length(ZAxis),1) + 1i*ones(length(ZAxis),1);
-
-% infield=[real(InitialField) imag(InitialField)];
-%save('init_field.in','infield','-ascii')
 
 if INTT < 1
     error('Too small Tend');
@@ -152,7 +170,7 @@ fprintf(fileID,'dt = %f\n', dt);
 fprintf(fileID,'tol = %g\n', tol);
 fclose(fileID);
 
-[OUTF, OUTJ] = gyroscr(Nz, Nt, Ne, ZAxis, TAxis, Delta, I0, dt, dz, tol, kpar2, INTT, INTZ, OUTNz, OUTNt, InitialField);
+[OUTF, OUTJ, Eff, Omega, jout] = gyroscr(Nz, Nt, Ne, ZAxis, TAxis, Delta, I0, dt, dz, tol, kpar2, INTT, INTZ, OUTNz, OUTNt, InitialField);
 
 Folder = 'results/';
 
@@ -192,22 +210,44 @@ OUTJvsZ = [OUTZAxis OUTJvsZ];
 OUTBvsT = [OUTTAxis OUTBvsT];
 OUTJvsT = [OUTTAxis OUTJvsT];
 
+OUTEff = [TAxis Eff];
+OUTOmega = [TAxis Omega];
+
 fileParameters = sprintf('%s/%s', FolderName, 'parameters.txt');
 fileResultsBvsZ = sprintf('%s/%s', FolderName, 'resultsBvsZ.dat');
 fileResultsJvsZ = sprintf('%s/%s', FolderName, 'resultsJvsZ.dat');
 fileResultsBvsT = sprintf('%s/%s', FolderName, 'resultsBvsT.dat');
 fileResultsJvsT = sprintf('%s/%s', FolderName, 'resultsJvsT.dat');
+fileResultsEffvsT = sprintf('%s/%s', FolderName, 'resultsEffvsT.dat');
+fileResultsWvsT = sprintf('%s/%s', FolderName, 'resultsWvsT.dat');
 fileT = sprintf('%s/%s', FolderName, 'Time.dat');
 fileZ = sprintf('%s/%s', FolderName, 'Z.dat');
 
-strParam = 'Ne = %d\nTend = %f\nLz = %f\nDelta = %f\nI = %f\ndz = %f\ndt = %f\n';
-fileID = fopen(fileParameters ,'wt');
-fprintf(fileID, strParam, Ne, Tend, Lz, Delta, Ic, dz, dt);
+fileID = fopen(fileParameters ,'w');
+fprintf(fileID,'Nz = %f\n', Nz);
+fprintf(fileID,'Nt = %f\n', Nt);
+fprintf(fileID,'Ne = %f\n', Ne);
+fprintf(fileID,'ZetaEx = %f\n', ZetaEx);
+fprintf(fileID,'TauEnd = %f\n', TauEnd);
+fprintf(fileID,'Delta = %f\n', Delta);
+fprintf(fileID,'I0 = %f\n', I0);
+fprintf(fileID,'R0 = %f\n', R0);
+fprintf(fileID,'Rb = %f\n', Rb);
+fprintf(fileID,'g = %f\n', g);
+fprintf(fileID,'ukv = %f\n', ukv);
+fprintf(fileID,'dz = %f\n', dz);
+fprintf(fileID,'dt = %f\n', dt);
+fprintf(fileID,'tol = %g\n', tol);
+fprintf(fileID,'Last tau index = %g\n', jout);
 fclose(fileID);
+
 save(fileResultsBvsZ, 'OUTBvsZ', '-ascii');
 save(fileResultsJvsZ, 'OUTJvsZ', '-ascii');
 save(fileResultsBvsT, 'OUTBvsT', '-ascii');
 save(fileResultsJvsT, 'OUTJvsT', '-ascii');
+save(fileResultsEffvsT, 'OUTEff', '-ascii');
+save(fileResultsWvsT, 'OUTOmega', '-ascii');
+
 save(fileT, 'TAxis', '-ascii');
 save(fileZ, 'ZAxis', '-ascii');
 end
