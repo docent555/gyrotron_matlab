@@ -228,7 +228,8 @@ for step=1:Nt-1
     JNz(IDX(step)) = cu(Nz);
     JNzm1(IDX(step)) = cu(Nzm1);
     
-    Omega(IDX(step)) = (angle(field(Nz)) - angle(FNz(IDX(step-1))))/dt;
+%     Omega(IDX(step)) = (angle(field(Nz)) - angle(FNz(IDX(step-1))))/dt;
+    Omega(IDX(step)) = imag(log(field(Nz)/FNz(IDX(step-1))))/dt;
     Eff(IDX(step)) = 1 - trapz(th0, abs(p(Nz,:).^2))/(2*pi);
             
     if (mod(num_st_test_iter,1000))
@@ -237,6 +238,7 @@ for step=1:Nt-1
             jout = jout + 1;
             OUTF(:, jout) = field(IZ,1);
             OUTJ(:, jout) = J(IZ,1);
+            fprintf('Emergency exit!\n');
             return;
         end
         num_st_test_iter = num_st_test_iter + 1;

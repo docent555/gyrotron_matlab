@@ -1,4 +1,6 @@
 function [OUTFre, OUTFim, OUTJre, OUTJim, OUTZAxis, OUTTAxis, Eff, Omega, jout] = gyrotron() %#codegen
+% function [OUTFre, OUTFim, OUTJre, OUTJim, OUTZAxis, OUTTAxis, Eff, Omega, jout] = ...
+%     gyrotron(Ne, Nz, Lz, Tend, Delta, I0, R0, Rb, g, ukv, dz, dt, tol, INTT, INTZ, SPLINE) %#codegen
 
 input_param = read_namelist('input_fortran.in', 'param');
 
@@ -18,15 +20,17 @@ tol = input_param.tol;
 INTT = input_param.intt;
 INTZ = input_param.intz;
 SPLINE = input_param.spline;
+DK = input_param.dk;
 
 % if nargin < 8
 %     fprintf('USAGE: orotron Ne Lz Tend Delta I dz dt\n')
 % end
 
 convert = true;
+Ic = 0;
 if Nz == 0
     Nz = fix(Lz/dz) + 1;
-    Nt = fix(Tend/dt) + 1;
+    Ic = I0;
     convert = false;
 end
 
@@ -59,15 +63,21 @@ w_op = c * nu / R0;
 
 if convert == true
     ZetaEx = betta_perp2/2.0/betta_z*w_op*Lz/c;
-    I0 = 16 / (17000) * (I0 * betta_z * besselj(28-1,nu*Rb/R0)^2) / ...
+    Ic = 16 / (17000) * (I0 * betta_z * besselj(28-1,nu*Rb/R0)^2) / ...
         (gamma0 * betta^6 * (nu^2 - 28^2) * besselj(28, nu)^2);
     
     TauEnd = betta_perp2^2*w_op*Tend/8/betta_z2;
     
     % delta(z)
     dz = ZetaEx/(Nz-1);
-    dt = dz*dz;
-    Rr_file = load('d:\Alex\Documents\Work\novozhilova\22-09-23 Продольная структура и профиль рез-ра\RR2812.dat');
+    dt = DK*dz*dz;
+%     Rr_file = load('d:\Alex\Documents\Work\novozhilova\22-09-23 Продольная структура и профиль рез-ра\RR2812.dat');
+    fileID = fopen('RR2812.bin');
+    if fileID < 0
+        error('Error of file open.')
+    end
+    Rr_file = fread(fileID,[100 2],'double');
+    fclose(fileID);    
     ZAxis = 0:dz:ZetaEx;
     Rr = zeros(Nz,1);
     [ba, ca, da] = spline(length(Rr_file(:,1)), Rr_file(:,1), Rr_file(:,2));
@@ -109,11 +119,11 @@ for i=1:Nt
 end
 
 ZBEG = 0;
-ZEND = .5;
-% ZEND = ZetaEx;
+% ZEND = .5;
+ZEND = ZetaEx;
 IND1 = (ZAxis > ZBEG & ZAxis < ZEND);
-% InitialField(IND1,1) = 0.001*sin(pi * (ZAxis(IND1) - ZBEG) / (ZEND - ZBEG)).^2;
-InitialField(IND1,1) = sin(pi * (ZAxis(IND1) - ZBEG) / (ZEND - ZBEG)).^2;
+InitialField(IND1,1) = 0.001*sin(pi * (ZAxis(IND1) - ZBEG) / (ZEND - ZBEG)).^2;
+% InitialField(IND1,1) = sin(pi * (ZAxis(IND1) - ZBEG) / (ZEND - ZBEG)).^2;
 % InitialField = ones(length(ZAxis),1) + 1i*ones(length(ZAxis),1);
 
 if INTT < 1
@@ -154,9 +164,9 @@ for i = 2:OUTNt
 end
 
 fileID = fopen('input.txt','w');
-fprintf(fileID,'Nz = %f\n', Nz);
-fprintf(fileID,'Nt = %f\n', Nt);
-fprintf(fileID,'Ne = %f\n', Ne);
+fprintf(fileID,'Nz = %i\n', int64(Nz));
+fprintf(fileID,'Nt = %i\n', int64(Nt));
+fprintf(fileID,'Ne = %i\n', int64(Ne));
 fprintf(fileID,'ZetaEx = %f\n', ZetaEx);
 fprintf(fileID,'TauEnd = %f\n', TauEnd);
 fprintf(fileID,'Delta = %f\n', Delta);
@@ -170,7 +180,7 @@ fprintf(fileID,'dt = %f\n', dt);
 fprintf(fileID,'tol = %g\n', tol);
 fclose(fileID);
 
-[OUTF, OUTJ, Eff, Omega, jout] = gyroscr(Nz, Nt, Ne, ZAxis, TAxis, Delta, I0, dt, dz, tol, kpar2, INTT, INTZ, OUTNz, OUTNt, InitialField);
+[OUTF, OUTJ, Eff, Omega, jout] = gyroscr(Nz, Nt, Ne, ZAxis, TAxis, Delta, Ic, dt, dz, tol, kpar2, INTT, INTZ, OUTNz, OUTNt, InitialField);
 
 Folder = 'results/';
 

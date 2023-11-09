@@ -19,8 +19,8 @@ J_p = complex(zeros(Nz,1));
 J = complex(zeros(Nz,1));
 OUTF = complex(zeros(OUTNz, OUTNt));
 OUTJ = complex(zeros(OUTNz, OUTNt));
-Eff = complex(zeros(Nt,1));
-Omega = complex(zeros(Nt,1));
+Eff = zeros(Nt,1);
+Omega = zeros(Nt,1);
 % theta = zeros(Nz, Ne);
 % p = zeros(Nz, Ne);
 % pv = zeros(Nz, 2*Ne);
@@ -228,7 +228,8 @@ for step=1:Nt-1
     JNz(IDX(step)) = cu(Nz);
     JNzm1(IDX(step)) = cu(Nzm1);
     
-    Omega(IDX(step)) = (angle(field(Nz)) - angle(FNz(IDX(step-1))))/dt;
+%     Omega(IDX(step)) = (angle(field(Nz)) - angle(FNz(IDX(step-1))))/dt;
+    Omega(IDX(step)) = imag(log(field(Nz)/FNz(IDX(step-1))))/dt;
     Eff(IDX(step)) = 1 - trapz(th0, abs(p(Nz,:).^2))/(2*pi);    
     
     if (mod(num_st_test_iter,1000))
@@ -237,6 +238,7 @@ for step=1:Nt-1
             jout = jout + 1;
             OUTF(:, jout) = field(IZ,1);
             OUTJ(:, jout) = J(IZ,1);
+            fprintf('Emergency exit!\n');
             return;
         end
         num_st_test_iter = num_st_test_iter + 1;
