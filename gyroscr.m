@@ -209,8 +209,9 @@ for step=1:Nt-1
             break
         end
         maxfield = maxfield_p; 
-        if num_insteps > 3000
-            error('Too many inner steps!');
+        if num_insteps > 1000
+            fprintf('\nToo many inner steps!\n');
+            pause;
         end
     end
     

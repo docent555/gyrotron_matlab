@@ -9,7 +9,7 @@ lHandleFmax.Color = 'black';
 lHandleFmax.LineWidth = 1;
 axFmax.FontSize = 12;
 axFmax.XLabel.String = 't';
-axFmax.YLabel.String = '|F|_{max}';
+axFmax.YLabel.String = '\Omega';
 
 axFabs = subplot(2,2,3);
 axFabs.XLim = [0 z(end)];

@@ -1,6 +1,6 @@
 function [OUTFre, OUTFim, OUTJre, OUTJim, OUTZAxis, OUTTAxis, Eff, Omega, jout] = gyrotron() %#codegen
 % function [OUTFre, OUTFim, OUTJre, OUTJim, OUTZAxis, OUTTAxis, Eff, Omega, jout] = ...
-%     gyrotron(Ne, Nz, Lz, Tend, Delta, I0, R0, Rb, g, ukv, dz, dt, tol, INTT, INTZ, SPLINE) %#codegen
+%     gyrotron(Ne, Nz, Lz, Tend, Delta, I0, R0, Rb, g, ukv, dz, dt, tol, INTT, INTZ, SPLINE, a0) %#codegen
 
 input_param = read_namelist('input_fortran.in', 'param');
 
@@ -21,6 +21,7 @@ INTT = input_param.intt;
 INTZ = input_param.intz;
 SPLINE = input_param.spline;
 DK = input_param.dk;
+a0 = input_param.a0;
 
 % if nargin < 8
 %     fprintf('USAGE: orotron Ne Lz Tend Delta I dz dt\n')
@@ -74,7 +75,8 @@ if convert == true
 %     Rr_file = load('d:\Alex\Documents\Work\novozhilova\22-09-23 Продольная структура и профиль рез-ра\RR2812.dat');
     fileID = fopen('RR2812.bin');
     if fileID < 0
-        error('Error of file open.')
+        fprintf('\nError of file open.\n');
+        pause;
     end
     Rr_file = fread(fileID,[100 2],'double');
     fclose(fileID);    
@@ -122,7 +124,7 @@ ZBEG = 0;
 % ZEND = .5;
 ZEND = ZetaEx;
 IND1 = (ZAxis > ZBEG & ZAxis < ZEND);
-InitialField(IND1,1) = 0.001*sin(pi * (ZAxis(IND1) - ZBEG) / (ZEND - ZBEG)).^2;
+InitialField(IND1,1) = a0*sin(pi * (ZAxis(IND1) - ZBEG) / (ZEND - ZBEG)).^2;
 % InitialField(IND1,1) = sin(pi * (ZAxis(IND1) - ZBEG) / (ZEND - ZBEG)).^2;
 % InitialField = ones(length(ZAxis),1) + 1i*ones(length(ZAxis),1);
 
@@ -198,66 +200,106 @@ OUTFim = imag(OUTF);
 OUTJre = real(OUTJ);
 OUTJim = imag(OUTJ);
 
-OUTBvsZ = zeros(size(OUTF,1), 2*size(OUTF,2));
-OUTJvsZ = zeros(size(OUTJ,1), 2*size(OUTJ,2));
-OUTBvsZ(:,1:2:end-1) = real(OUTF);
-OUTBvsZ(:,2:2:end) = imag(OUTF);
-OUTJvsZ(:,1:2:end-1) = real(OUTJ);
-OUTJvsZ(:,2:2:end) = imag(OUTJ);
+% fileID = fopen('fre_m.dat','w');
+% for idx0 = 1:OUTNz
+%     fprintf(fileID, "%e\t", OUTZAxis(idx0));
+%     for idx1 = 1:OUTNt
+%         fprintf(fileID, "%e\t%f\t", OUTFre(idx0, idx1));
+%     end
+%     fprintf(fileID, "\n");
+% end
+% fclose(fileID);
+% 
+% fileID = fopen('fim_m.dat','w');
+% for idx0 = 1:OUTNz
+%     fprintf(fileID, "%e\t", OUTZAxis(idx0));
+%     for idx1 = 1:OUTNt
+%         fprintf(fileID, "%e\t%f\t", OUTFim(idx0, idx1));
+%     end
+%     fprintf(fileID, "\n");
+% end
+% fclose(fileID);
+% 
+% fileID = fopen('ire_m.dat','w');
+% for idx0 = 1:OUTNz
+%     fprintf(fileID, "%e\t", OUTZAxis(idx0));
+%     for idx1 = 1:OUTNt
+%         fprintf(fileID, "%e\t%f\t", OUTJre(idx0, idx1));
+%     end
+%     fprintf(fileID, "\n");
+% end
+% fclose(fileID);
+% 
+% fileID = fopen('iim_m.dat','w');
+% for idx0 = 1:OUTNz
+%     fprintf(fileID, "%e\t", OUTZAxis(idx0));
+%     for idx1 = 1:OUTNt
+%         fprintf(fileID, "%e\t%f\t", OUTJim(idx0, idx1));
+%     end
+%     fprintf(fileID, "\n");
+% end
+% fclose(fileID);
+% 
+% fileID = fopen('e_m.dat','w');
+% for idx1 = 1:Nt
+%     fprintf(fileID, "%e\t%e\n", TAxis(idx1), Eff(idx1));
+% end
+% fclose(fileID);
+% 
+% fileID = fopen('w_m.dat','w');
+% for idx1 = 1:Nt
+%     fprintf(fileID, "%e\t%e\n", TAxis(idx1), Omega(idx1));
+% end
+% fclose(fileID);
 
-OUTF = OUTF.';
-OUTJ = OUTJ.';
-OUTBvsT = zeros(size(OUTF,1), 2*size(OUTF,2));
-OUTJvsT = zeros(size(OUTJ,1), 2*size(OUTJ,2));
-OUTBvsT(:,1:2:end-1) = real(OUTF);
-OUTBvsT(:,2:2:end) = imag(OUTF);
-OUTJvsT(:,1:2:end-1) = real(OUTJ);
-OUTJvsT(:,2:2:end) = imag(OUTJ);
-
-OUTBvsZ = [OUTZAxis OUTBvsZ];
-OUTJvsZ = [OUTZAxis OUTJvsZ];
-
-OUTBvsT = [OUTTAxis OUTBvsT];
-OUTJvsT = [OUTTAxis OUTJvsT];
-
-OUTEff = [TAxis Eff];
-OUTOmega = [TAxis Omega];
-
-fileParameters = sprintf('%s/%s', FolderName, 'parameters.txt');
-fileResultsBvsZ = sprintf('%s/%s', FolderName, 'resultsBvsZ.dat');
-fileResultsJvsZ = sprintf('%s/%s', FolderName, 'resultsJvsZ.dat');
-fileResultsBvsT = sprintf('%s/%s', FolderName, 'resultsBvsT.dat');
-fileResultsJvsT = sprintf('%s/%s', FolderName, 'resultsJvsT.dat');
-fileResultsEffvsT = sprintf('%s/%s', FolderName, 'resultsEffvsT.dat');
-fileResultsWvsT = sprintf('%s/%s', FolderName, 'resultsWvsT.dat');
-fileT = sprintf('%s/%s', FolderName, 'Time.dat');
-fileZ = sprintf('%s/%s', FolderName, 'Z.dat');
-
-fileID = fopen(fileParameters ,'w');
-fprintf(fileID,'Nz = %f\n', Nz);
-fprintf(fileID,'Nt = %f\n', Nt);
-fprintf(fileID,'Ne = %f\n', Ne);
-fprintf(fileID,'ZetaEx = %f\n', ZetaEx);
-fprintf(fileID,'TauEnd = %f\n', TauEnd);
-fprintf(fileID,'Delta = %f\n', Delta);
-fprintf(fileID,'I0 = %f\n', I0);
-fprintf(fileID,'R0 = %f\n', R0);
-fprintf(fileID,'Rb = %f\n', Rb);
-fprintf(fileID,'g = %f\n', g);
-fprintf(fileID,'ukv = %f\n', ukv);
-fprintf(fileID,'dz = %f\n', dz);
-fprintf(fileID,'dt = %f\n', dt);
-fprintf(fileID,'tol = %g\n', tol);
-fprintf(fileID,'Last tau index = %g\n', jout);
-fclose(fileID);
-
-save(fileResultsBvsZ, 'OUTBvsZ', '-ascii');
-save(fileResultsJvsZ, 'OUTJvsZ', '-ascii');
-save(fileResultsBvsT, 'OUTBvsT', '-ascii');
-save(fileResultsJvsT, 'OUTJvsT', '-ascii');
-save(fileResultsEffvsT, 'OUTEff', '-ascii');
-save(fileResultsWvsT, 'OUTOmega', '-ascii');
-
-save(fileT, 'TAxis', '-ascii');
-save(fileZ, 'ZAxis', '-ascii');
+% fileParameters = sprintf('%s/%s', FolderName, 'parameters.txt');
+% fileResultsFre = sprintf('%s/%s', FolderName, 'fre.dat');
+% fileResultsFim = sprintf('%s/%s', FolderName, 'fim.dat');
+% fileResultsJre = sprintf('%s/%s', FolderName, 'jre.dat');
+% fileResultsJim = sprintf('%s/%s', FolderName, 'jim.dat');
+% fileResultsEff = sprintf('%s/%s', FolderName, 'e.dat');
+% fileResultsW = sprintf('%s/%s', FolderName, 'w.dat');
+% fileT = sprintf('%s/%s', FolderName, 'Time.dat');
+% fileZ = sprintf('%s/%s', FolderName, 'Z.dat');
+% 
+% fileID = fopen(fileParameters ,'w');
+% fprintf(fileID,'Nz = %f\n', Nz);
+% fprintf(fileID,'Nt = %f\n', Nt);
+% fprintf(fileID,'Ne = %f\n', Ne);
+% fprintf(fileID,'ZetaEx = %f\n', ZetaEx);
+% fprintf(fileID,'TauEnd = %f\n', TauEnd);
+% fprintf(fileID,'Delta = %f\n', Delta);
+% fprintf(fileID,'I0 = %f\n', I0);
+% fprintf(fileID,'R0 = %f\n', R0);
+% fprintf(fileID,'Rb = %f\n', Rb);
+% fprintf(fileID,'g = %f\n', g);
+% fprintf(fileID,'ukv = %f\n', ukv);
+% fprintf(fileID,'dz = %f\n', dz);
+% fprintf(fileID,'dt = %f\n', dt);
+% fprintf(fileID,'tol = %g\n', tol);
+% fprintf(fileID,'Last tau index = %g\n', jout);
+% fclose(fileID);
+% 
+% OUTFre = real(OUTF);
+% OUTFim = imag(OUTF);
+% OUTJre = real(OUTJ);
+% OUTJim = imag(OUTJ);
+%  
+% OUTFre = [OUTZAxis OUTFre];
+% OUTFim = [OUTZAxis OUTFim]; 
+% OUTJre = [OUTZAxis OUTJre];
+% OUTJim = [OUTZAxis OUTJim];
+% 
+% OUTEff = [TAxis Eff];
+% OUTOmega = [TAxis Omega];
+% 
+% save(fileResultsFre, 'OUTFre', '-ascii');
+% save(fileResultsFim, 'OUTFim', '-ascii');
+% save(fileResultsJre, 'OUTJre', '-ascii');
+% save(fileResultsJim, 'OUTJim', '-ascii');
+% save(fileResultsEff, 'OUTEff', '-ascii');
+% save(fileResultsW, 'OUTOmega', '-ascii');
+% 
+% save(fileT, 'TAxis', '-ascii');
+% save(fileZ, 'ZAxis', '-ascii');
 end
