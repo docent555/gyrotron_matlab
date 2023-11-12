@@ -180,6 +180,8 @@ fprintf(fileID,'ukv = %f\n', ukv);
 fprintf(fileID,'dz = %f\n', dz);
 fprintf(fileID,'dt = %f\n', dt);
 fprintf(fileID,'tol = %g\n', tol);
+fprintf(fileID,'INTT = %i\n', int64(INTT));
+fprintf(fileID,'INTZ = %i\n', int64(INTZ));
 fclose(fileID);
 
 [OUTF, OUTJ, Eff, Omega, jout] = gyroscr(Nz, Nt, Ne, ZAxis, TAxis, Delta, Ic, dt, dz, tol, kpar2, INTT, INTZ, OUTNz, OUTNt, InitialField);
