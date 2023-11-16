@@ -1,9 +1,10 @@
 & param
-Ne = 256
-Nz = 0
-Lz = 3
-Tend = 1
-Delta = 0.3
+Ne = 128
+Nz = 1000
+Lz = 5.264
+Lzi = 5.264
+Tend = 100
+Delta = 0.4
 I0 = 35
 R0 = 2.077
 Rb = 0.827
@@ -16,5 +17,5 @@ INTT = 20
 INTZ = 20
 SPLINE = 0
 DK = 1
-a0 = 1
+a0 = 0.1
 /
