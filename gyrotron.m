@@ -33,14 +33,15 @@ if Lzi > Lz
     pause
 end
 
-Tend = 1e-9 * Tend; % perevod v [ns]
-
+Ic = I0;
 convert = true;
 if Nz == 0
-    Nz1 = fix(Lz/dz) + 1;    
+    Nz = fix(Lz/dz) + 1;
+    Nz1 = fix(Lz/dz) + 1;      
     convert = false;
 else
     Nz1 = Nz;
+    Tend = 1e-9 * Tend; % perevod v [ns]
 end
 
 gamma = 1.0 + ukv/511.0;
@@ -69,7 +70,7 @@ nu = 73.952055635763557;
 
 w_op = c * nu / R0;
 
-Ic = zeros(Nz,1);
+% Ic = zeros(Nz,1);
 wc = zeros(Nz,1);
 kpar2 = zeros(Nz,1);
 
@@ -133,8 +134,8 @@ for i=1:Nt
 end
 
 ZBEG = 0;
-% ZEND = .5;
-ZEND = ZetaEx;
+ZEND = .5;
+% ZEND = ZetaEx;
 IND1 = (ZAxis > ZBEG & ZAxis < ZEND);
 InitialField(IND1,1) = a0*sin(pi * (ZAxis(IND1) - ZBEG) / (ZEND - ZBEG)).^2;
 % InitialField(IND1,1) = sin(pi * (ZAxis(IND1) - ZBEG) / (ZEND - ZBEG)).^2;
@@ -194,7 +195,7 @@ fprintf(fileID,'ZetaEx = %f\n', ZetaEx);
 fprintf(fileID,'TauEnd = %f\n', TauEnd);
 fprintf(fileID,'Delta = %f\n', Delta);
 fprintf(fileID,'I0 = %f\n', I0);
-fprintf(fileID,'Ic = %f\n', Ic(1));
+fprintf(fileID,'Ic = %f\n', Ic);
 fprintf(fileID,'R0 = %f\n', R0);
 fprintf(fileID,'Rb = %f\n', Rb);
 fprintf(fileID,'g = %f\n', g);
