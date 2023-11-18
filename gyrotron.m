@@ -33,6 +33,7 @@ if Lzi > Lz
     pause
 end
 
+Tend_ns = 1e-9 * Tend; % perevod v [ns]
 Ic = I0;
 convert = true;
 if Nz == 0
@@ -40,8 +41,7 @@ if Nz == 0
     Nz1 = fix(Lz/dz) + 1;      
     convert = false;
 else
-    Nz1 = Nz;
-    Tend = 1e-9 * Tend; % perevod v [ns]
+    Nz1 = Nz;    
 end
 
 gamma = 1.0 + ukv/511.0;
@@ -80,7 +80,7 @@ if convert == true
     Ic = 16 / (17045.81697831) * (I0 * betta_z * besselj(27,nu*Rb/R0)^2) / ...
         (gamma * betta_perp2^3 * (nu^2 - 28^2) * besselj(28, nu)^2);
     
-    TauEnd = betta_perp2^2*w_op*Tend/8/betta_z2;    
+    TauEnd = betta_perp2^2*w_op*Tend_ns/8/betta_z2;    
     
     % delta(z)
     dz = ZetaEx/(Nz-1);
@@ -108,7 +108,7 @@ if convert == true
         for i=1:length(x)
             Rr(i) = uval(x(i),Rr_file(:,1),Rr_file(:,2));
         end
-        Rr(:) = Rr(:)/10; % в сантиметрах
+        Rr(:) = Rr(:)/10; % в сантиметрах        
     end     
     
     wc(1:Nz) = c*nu*ones(Nz,1)./Rr;    
@@ -134,8 +134,8 @@ for i=1:Nt
 end
 
 ZBEG = 0;
-ZEND = .5;
-% ZEND = ZetaEx;
+% ZEND = .5;
+ZEND = ZetaEx;
 IND1 = (ZAxis > ZBEG & ZAxis < ZEND);
 InitialField(IND1,1) = a0*sin(pi * (ZAxis(IND1) - ZBEG) / (ZEND - ZBEG)).^2;
 % InitialField(IND1,1) = sin(pi * (ZAxis(IND1) - ZBEG) / (ZEND - ZBEG)).^2;
@@ -191,6 +191,7 @@ fprintf(fileID,'Nt = %i\n', int64(Nt));
 fprintf(fileID,'Ne = %i\n', int64(Ne));
 fprintf(fileID,'Lz = %f\n', Lz);
 fprintf(fileID,'Lzi = %f\n', Lzi);
+fprintf(fileID,'Tend = %f\n', Tend);
 fprintf(fileID,'ZetaEx = %f\n', ZetaEx);
 fprintf(fileID,'TauEnd = %f\n', TauEnd);
 fprintf(fileID,'Delta = %f\n', Delta);

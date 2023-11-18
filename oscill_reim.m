@@ -3,12 +3,14 @@ function p = oscill_reim(field, Nz, ZAxis, Delta, p0v, reidx, imidx)
 % if isempty(i)
 %     i = 1;
 % end
+
 fre = real(field);
 fim = imag(field);
 [reb,rec,red] = spline(Nz,ZAxis,fre);
 [imb,imc,imd] = spline(Nz,ZAxis,fim);
 S1 = @(z) seval_cmplx(z, Nz, ZAxis, fre, fim, reb, rec, red, imb, imc, imd);
-% if i == 1000
+
+% if i == 10000
 %     for j=1:Nz
 %         ss(j) =  S1(ZAxis(j));
 %     end
@@ -16,8 +18,10 @@ S1 = @(z) seval_cmplx(z, Nz, ZAxis, fre, fim, reb, rec, red, imb, imc, imd);
 %     plot(ZAxis, imag(ss), ZAxis, imag(field))
 %     pause
 % end
+
 [~, pv] = ode45(@(z, p) rhsv(z, p, Delta, S1, reidx, imidx) , ZAxis , p0v);
 p = pv(:,reidx) + 1i*pv(:,imidx);
+
 % i = i + 1;
 end
 

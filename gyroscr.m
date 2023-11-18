@@ -83,13 +83,12 @@ p0 = exp(1i*th0)';
 p0v = [real(p0); imag(p0)];
 reidx = 1:Ne;
 imidx = Ne+1:2*Ne;
-p = oscill_reim(field(1:Nz1), Nz1, ZAxis(1:Nz1), Delta, p0v, reidx, imidx);
-% p = oscill_cmplx(field(1:Nz1), ZAxis(1:Nz1), Delta, p0);
-J(1:Nz1,1) = Ic * trapz(th0, p, 2)  / (2*pi);
+p = oscill_reim(field(1:Nz2), Nz2, ZAxis(1:Nz2), Delta, p0v, reidx, imidx);
+% p = oscill_cmplx(field(1:Nz2), ZAxis(1:Nz2), Delta, p0);
+J(1:Nz2,1) = Ic * trapz(th0, p, 2)  / (2*pi);
 % J(:,1) = Ic * trpz(dz, p, Ne)  / (2*pi);
 cu(:,1) = J(:) - 1i*kpar2(:).*field(:);
 OUTJ(:,jout) = J(IZ,1);
-
 
 IDX = @(j) (j + 1);
 
@@ -101,7 +100,7 @@ JNz(IDX(0)) = cu(Nz);
 JNzm1(IDX(0)) = cu(Nzm1);
 SigmaNz(IDX(0)) = 0;
 SigmaNzm1(IDX(0)) = 0;
-Eff(IDX(0)) = 1 - trapz(th0, abs(p(Nz1,:).^2))/(2*pi);
+Eff(IDX(0)) = 1 - trapz(th0, abs(p(Nz2,:).^2))/(2*pi);
 Omega(IDX(0)) = 0;
 
 WR(IDX(0)) = dz * (2.0D0/3.0D0*(2.0D0 * JNz(IDX(0)) + JNzm1(IDX(0))));
@@ -190,9 +189,9 @@ for step=1:Nt-1
     maxfield = max(abs(field_p(:,1)));
     while 1
         num_insteps = num_insteps + 1;
-        p = oscill_reim(field_p(1:Nz1), Nz1, ZAxis(1:Nz1), Delta, p0v, reidx, imidx);
-        % p = oscill_cmplx(field_p(1:Nz1), ZAxis(1:Nz1), Delta, p0);
-        J_p(1:Nz1,1) = Ic * trapz(th0, p, 2)  / (2*pi);     
+        p = oscill_reim(field_p(1:Nz2), Nz2, ZAxis(1:Nz2), Delta, p0v, reidx, imidx);
+%         p = oscill_cmplx(field_p(1:Nz2), ZAxis(1:Nz2), Delta, p0);
+        J_p(1:Nz2,1) = Ic * trapz(th0, p, 2)  / (2*pi);     
         %         J_p(:,1) = Ic * trpz(dz, p, Ne)  / (2*pi);
         cu_p(:,1) = J_p(:) - 1i*kpar2(:).*field_p(:);
         
@@ -223,13 +222,19 @@ for step=1:Nt-1
     end
     
     field(:,1) = field_p(:,1);
-    p = oscill_reim(field(1:Nz1), Nz1, ZAxis(1:Nz1), Delta, p0v, reidx, imidx);
-    % p = oscill_cmplx(field(1:Nz1), ZAxis(1:Nz1), Delta, p0);
-    J(1:Nz1,1) = Ic * trapz(th0, p, 2)  / (2*pi);
+    p = oscill_reim(field(1:Nz2), Nz2, ZAxis(1:Nz2), Delta, p0v, reidx, imidx);
+%     p = oscill_cmplx(field(1:Nz2), ZAxis(1:Nz2), Delta, p0);
+    J(1:Nz2,1) = Ic * trapz(th0, p, 2)  / (2*pi);
     %     J(:,1) = Ic * trpz(dz, p, Ne)  / (2*pi);
     cu(:,1) = J(:) - 1i*kpar2(:).*field(:);
     fmax(IDX(step)) = max(abs(field(:,1)));
     jmax(IDX(step)) = max(abs(cu(:,1)));
+    
+%     if step == 10
+%         pp=[ZAxis abs(p)];       
+%         save('test_reim.dat', 'pp', '-ascii');
+%         pause
+%     end
     
     FNz(IDX(step)) =  field(Nz);
     FNzm1(IDX(step)) = field(Nzm1);
@@ -238,7 +243,7 @@ for step=1:Nt-1
     
 %     Omega(IDX(step)) = (angle(field(Nz)) - angle(FNz(IDX(step-1))))/dt;
     Omega(IDX(step)) = imag(log(field(Nz)/FNz(IDX(step-1))))/dt;
-    Eff(IDX(step)) = 1 - trapz(th0, abs(p(Nz1,:).^2))/(2*pi);  
+    Eff(IDX(step)) = 1 - trapz(th0, abs(p(Nz2,:).^2))/(2*pi);  
     
     if (mod(num_st_test_iter,1000))
         fmax_glob_new = max(abs(field(:,1)));
