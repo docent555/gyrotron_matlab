@@ -1,5 +1,5 @@
 & param
-Ne = 64
+Ne = 128
 Nz = 1000
 Lz = 5.264
 Lzi = 5.264
@@ -17,5 +17,5 @@ INTT = 500
 INTZ = 10
 SPLINE = 0
 DK = 1
-a0 = 1
+a0 = 0.01
 /

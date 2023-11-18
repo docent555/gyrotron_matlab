@@ -19,7 +19,9 @@ S1 = @(z) seval_cmplx(z, Nz, ZAxis, fre, fim, reb, rec, red, imb, imc, imd);
 %     pause
 % end
 
-[~, pv] = ode45(@(z, p) rhsv(z, p, Delta, S1, reidx, imidx) , ZAxis , p0v);
+opts = odeset('RelTol',1e-8,'AbsTol',1e-10);
+
+[~, pv] = ode45(@(z, p) rhsv(z, p, Delta, S1, reidx, imidx) , ZAxis , p0v, opts);
 p = pv(:,reidx) + 1i*pv(:,imidx);
 
 % i = i + 1;
