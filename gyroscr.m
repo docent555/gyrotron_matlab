@@ -72,7 +72,7 @@ B(2:Nzm1) = 1.0D0;
 C(1:Nz-2) = 1.0D0;
 C(Nzm1) = 4.0D0/3.0D0*C2*WNzm1*SQRDT;
 
-M = spdiags([[C; 0] A [0 ;B]], -1:1, Nz, Nz);
+% M = spdiags([[C; 0] A [0 ;B]], -1:1, Nz, Nz);
 
 % Initial values
 jout = 1;
@@ -180,10 +180,10 @@ for step=1:Nt-1
     D(Nz) = - coeff_C2_m_coeff_4_d_3_m_SQRDT * WR(IDX(step)) + D_END_PART;
     
     % nesamosoglasovannoe pole
-    field_p = M \ D;
-%     rfield_p = rtridag(C,A,B,D);
-%     lfield_p = ltridag(C,A,B,D);
-%     field_p = (rfield_p + lfield_p)/2.0D0;
+%     field_p = M \ D;
+    rfield_p = rtridag(C,A,B,D);
+    lfield_p = ltridag(C,A,B,D);
+    field_p = (rfield_p + lfield_p)/2.0D0;
     
     num_insteps = 0;
     maxfield = max(abs(field_p(:,1)));
@@ -202,10 +202,10 @@ for step=1:Nt-1
         
         
         % samosoglasovannoe pole
-        field_p(:,1) = M \ D;
-%         rfield_p(:,1) = rtridag(C,A,B,D);
-%         lfield_p(:,1) = ltridag(C,A,B,D);
-%         field_p = (rfield_p + lfield_p)/2.0D0;
+%         field_p(:,1) = M \ D;
+        rfield_p(:,1) = rtridag(C,A,B,D);
+        lfield_p(:,1) = ltridag(C,A,B,D);
+        field_p = (rfield_p + lfield_p)/2.0D0;
         
         
         maxfield_p = max(abs(field_p(:,1)));
@@ -226,13 +226,7 @@ for step=1:Nt-1
     J(1:Nz2,1) = Ic * sum(p, 2)/Ne;   
     cu(:,1) = J(:) - 1i*kpar2(:).*field(:);
     fmax(IDX(step)) = max(abs(field(:,1)));
-    jmax(IDX(step)) = max(abs(cu(:,1)));
-    
-%     if step == 10
-%         pp=[ZAxis abs(p)];       
-%         save('test_reim.dat', 'pp', '-ascii');
-%         pause
-%     end
+    jmax(IDX(step)) = max(abs(cu(:,1))); 
     
     FNz(IDX(step)) =  field(Nz);
     FNzm1(IDX(step)) = field(Nzm1);

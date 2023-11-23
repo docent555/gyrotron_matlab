@@ -75,7 +75,8 @@ wc = zeros(Nz,1);
 kpar2 = zeros(Nz,1);
 
 if convert == true
-    ZetaEx = betta_perp2/2.0/betta_z*w_op*Lz/c;    
+    ZetaEx = betta_perp2/2.0/betta_z*w_op*Lz/c;
+    ZetaExInter = betta_perp2/2.0/betta_z*w_op*Lzi/c;
     
     Ic = 16 / (17045.81697831) * (I0 * betta_z * besselj(27,nu*Rb/R0)^2) / ...
         (gamma * betta_perp2^3 * (nu^2 - 28^2) * besselj(28, nu)^2);
@@ -115,6 +116,7 @@ if convert == true
     kpar2(1:Nz) = 8*betta_z2/betta_perp2^2*(1 - wc(1:Nz)/w_op);      
 else
     ZetaEx = Lz;
+    ZetaExInter = Lzi;
     TauEnd = Tend;
     kpar2 = zeros(Nz,1);
 end
@@ -181,7 +183,7 @@ end
 if Lzi == Lz
     Nz2 = Nz1;
 else
-    Nz2 = fix(Lzi/dz) + 1;
+    Nz2 = fix(ZetaExInter/dz) + 1;
 end
 
 fileID = fopen('input_m.txt','w');
