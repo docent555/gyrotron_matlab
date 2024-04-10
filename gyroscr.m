@@ -58,13 +58,12 @@ SQRDZ = dz*dz;
 
 Nzm1 = Nz - 1;
 C0 = 1.0D0;
-CR = 0;
+CR = 0.0D0;
 C2 = 1.0D0/sqrt(1i*pi);
 WNz = -((-1i*2.0D0/3.0D0*C0*dz/dt) - 1.0D0/dz);
 WNzm1 = -((-1i*C0/3.0D0*dz/dt) + 1.0D0/dz);
 
 A(1) = 1.0D0;
-% A(2:Nzm1) = -2.0D0*(1.0D0 + 1i * dz/dt*C0*dz - dz*kpar2(2:Nzm1)*dz/2.0D0);
 A(2:Nzm1) = -2.0D0*(1.0D0 + 1i * SQRDZ/dt*C0);
 A(Nz) = 1.0D0 + 4.0D0/3.0D0*C2*WNz*SQRDT;
 B(1) = 0;

@@ -2,3 +2,5 @@ results/
 gyrotron/
 *.asv
 *.prj
+*.bmp
+gyrotron_test.m
