@@ -16,7 +16,6 @@ SigmaNzm1 = complex(zeros(Nt,1));
 fmax = zeros(Nt, 1);
 jmax = zeros(Nt, 1);
 field = complex(zeros(Nz,1));
-testfield = complex(zeros(Nz,1));
 field_p = complex(zeros(Nz,1));
 rfield_p = complex(zeros(Nz,1));
 lfield_p = complex(zeros(Nz,1));
@@ -59,7 +58,6 @@ SQRDZ = dz*dz;
 
 Nzm1 = Nz - 1;
 C0 = 1.0D0;
-% CR = -1i*kpar2(Nz);
 CR = 0.0D0;
 C2 = 1.0D0/sqrt(1i*pi);
 WNz = -((-1i*2.0D0/3.0D0*C0*dz/dt) - 1.0D0/dz);
@@ -188,7 +186,6 @@ for step=1:Nt-1
     
     num_insteps = 0;
     maxfield = max(abs(field_p(:,1)));
-    testfield = field_p;
     while 1
         num_insteps = num_insteps + 1;
         p = oscill_reim(field_p(1:Nz2), Nz2, ZAxis(1:Nz2), Delta, p0v, reidx, imidx);
@@ -208,13 +205,14 @@ for step=1:Nt-1
         rfield_p(:,1) = rtridag(C,A,B,D);
         lfield_p(:,1) = ltridag(C,A,B,D);
         field_p = (rfield_p + lfield_p)/2.0D0;
-               
-        maxdiff = max(abs(testfield - field_p));   
-        err = maxdiff/maxfield;
-        if err < tol
+        
+        
+        maxfield_p = max(abs(field_p(:,1)));
+        maxdiff = abs(maxfield - maxfield_p)/maxfield;
+        if maxdiff < tol
             break
         end
-        testfield = field_p;
+        maxfield = maxfield_p; 
         if num_insteps > 1000
             fprintf('\nToo many inner steps!\n');
             pause;
@@ -274,6 +272,7 @@ for step=1:Nt-1
         '\b\b\b\b\b\b\b\b\b\b\b\b\b\b\b\b\b\b\b\b\b\b\b\b\b\b\b\b\b\b\b'...        
         'Step = %8i   Time = %10.4f   Bmax = %+15.10e   Jmax = %+15.10e   W = %+15.10e   E = %+15.10e'],...
         int64(step), TAxis(k), fmax(k), max(abs(cu(:,1))), Omega(IDX(step)), Eff(IDX(step)));
+    
 end
 
 OUTJ(:,jout) = J(IZ,1);
@@ -294,7 +293,6 @@ fprintf(" \n\n");
         f = (WNzm1 * FNzm1(IDX(j)) + WNz * FNz(IDX(j)) + WR(IDX(j))).' .* exp(coeff_CR_m_dt * (step - j));
     end
 end
-
 
 
 
